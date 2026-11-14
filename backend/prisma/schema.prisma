@@ -11,3 +11,77 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Turno {
+  MANHA
+  TARDE
+  NOITE
+}
+
+enum StatusResultado {
+  CORRIGIDO
+  REVISAO_PENDENTE
+  REVISADO
+}
+
+model Aluno {
+  id           String    @id @default(uuid())
+  nome         String
+  matricula    String    @unique
+  turno        Turno
+  ativo        Boolean   @default(true)
+  desativadoEm DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resultados Resultado[]
+}
+
+model Professor {
+  id           String    @id @default(uuid())
+  nome         String
+  matricula    String    @unique
+  ativo        Boolean   @default(true)
+  desativadoEm DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  avaliacoes Avaliacao[]
+}
+
+model Avaliacao {
+  id                 String   @id @default(uuid())
+  titulo             String
+  quantidadeQuestoes Int      @default(10)
+  gabarito           String[]
+
+  professorId String
+  professor   Professor @relation(fields: [professorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resultados Resultado[]
+}
+
+model Resultado {
+  id String @id @default(uuid())
+
+  alunoId String
+  aluno   Aluno  @relation(fields: [alunoId], references: [id])
+
+  avaliacaoId String
+  avaliacao   Avaliacao @relation(fields: [avaliacaoId], references: [id])
+
+  respostas String[]
+  acertos   Int?
+  nota      Float?
+  status    StatusResultado @default(CORRIGIDO)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([alunoId, avaliacaoId])
+}
