@@ -14,6 +14,12 @@ export default function errorHandler(
     });
   }
 
+  if (error instanceof SyntaxError && 'type' in error && error.type === 'entity.parse.failed') {
+    return res.status(400).json({
+      mensagem: 'JSON inválido.'
+    });
+  }
+
   console.error(error);
 
   return res.status(500).json({
