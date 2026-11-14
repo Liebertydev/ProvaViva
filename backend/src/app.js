@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import errorHandler from './errors/errorHandler.js';
 import alunoRoutes from './routes/aluno.routes.js';
+import professorRoutes from './routes/professor.routes.js';
 
 const app = express();
 
@@ -10,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/alunos', alunoRoutes);
+app.use('/api/professores', professorRoutes);
 
 // Futuramente:
 // app.use('/api/avaliacoes', avaliacoesRoutes);

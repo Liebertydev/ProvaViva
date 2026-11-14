@@ -1,0 +1,209 @@
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { after, before, beforeEach, test } from 'node:test';
+import app from '../src/app.js';
+import prisma from '../src/database/prisma.js';
+
+const id = 'f3d1c9a2-7b6e-4d31-a935-86e47f2cb290';
+const professor = {
+  id,
+  nome: 'Professor de teste',
+  matricula: 'PROF-001',
+  ativo: true,
+  desativadoEm: null,
+  createdAt: '2026-01-01T12:00:00.000Z',
+  updatedAt: '2026-01-01T12:00:00.000Z',
+};
+const dados = { nome: professor.nome, matricula: professor.matricula };
+const originais = {
+  findUnique: prisma.professor.findUnique,
+  findMany: prisma.professor.findMany,
+  create: prisma.professor.create,
+  transaction: prisma.$transaction,
+};
+let server;
+let baseUrl;
+
+before(async () => {
+  server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  baseUrl = `http://127.0.0.1:${server.address().port}`;
+});
+
+beforeEach(() => {
+  // Todos os acessos usados pelas rotas são simulados; não há escrita no banco real.
+  prisma.professor.findUnique = async () => null;
+  prisma.professor.findMany = async () => [];
+  prisma.professor.create = async () => {
+    throw new Error('O cadastro deve usar a transação.');
+  };
+  prisma.$transaction = async (callback) => callback({
+    professor: {
+      findUnique: async () => null,
+      create: async ({ data }) => ({ ...professor, ...data }),
+    },
+  });
+});
+
+after(async () => {
+  prisma.professor.findUnique = originais.findUnique;
+  prisma.professor.findMany = originais.findMany;
+  prisma.professor.create = originais.create;
+  prisma.$transaction = originais.transaction;
+  if (server) await new Promise((resolve) => server.close(resolve));
+  await prisma.$disconnect();
+});
+
+const enviar = async (path, options) => {
+  const response = await fetch(`${baseUrl}${path}`, options);
+  return { status: response.status, body: await response.json() };
+};
+
+const cadastrar = (body) => enviar('/api/professores', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
+
+test('POST cadastra com 201, normaliza espaços e envia apenas nome e matrícula ao Prisma', async () => {
+  const ordem = [];
+  prisma.professor.findUnique = async (args) => {
+    assert.deepEqual(args, { where: { matricula: dados.matricula } });
+    ordem.push('consulta-service');
+    return null;
+  };
+  prisma.$transaction = async (callback) => {
+    ordem.push('transacao');
+    return callback({ professor: {
+      findUnique: async (args) => {
+        assert.deepEqual(args, { where: { matricula: dados.matricula } });
+        ordem.push('consulta-transacao');
+        return null;
+      },
+      create: async (args) => {
+        assert.deepEqual(args, { data: dados });
+        ordem.push('criar');
+        return professor;
+      },
+    } });
+  };
+
+  const response = await cadastrar({ nome: `  ${dados.nome}  `, matricula: ` ${dados.matricula} ` });
+  assert.equal(response.status, 201);
+  assert.deepEqual(response.body, professor);
+  assert.deepEqual(ordem, ['consulta-service', 'transacao', 'consulta-transacao', 'criar']);
+});
+
+test('POST preserva os zeros iniciais da matrícula', async () => {
+  const response = await cadastrar({ ...dados, matricula: '00123456' });
+  assert.equal(response.status, 201);
+  assert.equal(response.body.matricula, '00123456');
+});
+
+const cadastrosInvalidos = [
+  ['nome ausente', { matricula: dados.matricula }],
+  ['nome vazio', { ...dados, nome: '' }],
+  ['nome com espaços', { ...dados, nome: ' \t\n ' }],
+  ['nome numérico', { ...dados, nome: 123 }],
+  ['nome null', { ...dados, nome: null }],
+  ['matrícula ausente', { nome: dados.nome }],
+  ['matrícula vazia', { ...dados, matricula: '' }],
+  ['matrícula com espaços', { ...dados, matricula: ' \t ' }],
+  ['matrícula numérica', { ...dados, matricula: 123 }],
+  ['matrícula null', { ...dados, matricula: null }],
+  ['ID fornecido pelo cliente', { ...dados, id }],
+  ['situação fornecida pelo cliente', { ...dados, ativo: false }],
+  ['data fornecida pelo cliente', { ...dados, createdAt: professor.createdAt }],
+  ['turno adicional', { ...dados, turno: 'MANHA' }],
+  ['campo adicional', { ...dados, email: 'teste@example.invalid' }],
+  ['objeto vazio', {}],
+  ['array', []],
+  ['null', null],
+  ['string', 'professor'],
+];
+
+for (const [descricao, body] of cadastrosInvalidos) {
+  test(`POST rejeita ${descricao} com 400 antes de consultar o banco`, async () => {
+    let consultas = 0;
+    prisma.professor.findUnique = async () => { consultas++; return null; };
+    prisma.$transaction = async () => { consultas++; return professor; };
+    const response = await cadastrar(body);
+    assert.equal(response.status, 400);
+    assert.equal(typeof response.body.mensagem, 'string');
+    assert.equal(consultas, 0);
+  });
+}
+
+test('POST rejeita JSON malformado com 400', async () => {
+  const response = await enviar('/api/professores', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{',
+  });
+  assert.equal(response.status, 400);
+  assert.deepEqual(response.body, { mensagem: 'JSON inválido.' });
+});
+
+test('POST retorna 409 no service se a matrícula já existir, inclusive para inativo', async () => {
+  prisma.professor.findUnique = async () => ({ ...professor, ativo: false });
+  let transacoes = 0;
+  prisma.$transaction = async () => { transacoes++; return professor; };
+  const response = await cadastrar(dados);
+  assert.equal(response.status, 409);
+  assert.deepEqual(response.body, { mensagem: 'Já existe um professor com esta matrícula.' });
+  assert.equal(transacoes, 0);
+});
+
+test('POST retorna 409 se a matrícula aparecer dentro da transação', async () => {
+  let criacoes = 0;
+  prisma.$transaction = async (callback) => callback({ professor: {
+    findUnique: async () => professor,
+    create: async () => { criacoes++; return professor; },
+  } });
+  const response = await cadastrar(dados);
+  assert.equal(response.status, 409);
+  assert.deepEqual(response.body, { mensagem: 'Já existe um professor com esta matrícula.' });
+  assert.equal(criacoes, 0);
+});
+
+test('POST converte P2002 em 409 sem repetir a transação', async () => {
+  let transacoes = 0;
+  prisma.$transaction = async () => {
+    transacoes++;
+    const error = new Error('Unicidade simulada.');
+    error.code = 'P2002';
+    throw error;
+  };
+  const response = await cadastrar(dados);
+  assert.equal(response.status, 409);
+  assert.deepEqual(response.body, { mensagem: 'Já existe um professor com esta matrícula.' });
+  assert.equal(transacoes, 1);
+});
+
+for (const operacao of ['cadastro']) {
+  test(`falha inesperada na ${operacao} chega ao handler e retorna 500 sem detalhes`, async () => {
+    const erro = new Error('Detalhe interno que não deve ir para a resposta.');
+    const falhar = async () => { throw erro; };
+    if (operacao === 'cadastro') prisma.$transaction = falhar;
+    if (operacao === 'busca') prisma.professor.findUnique = falhar;
+    if (operacao === 'listagem') prisma.professor.findMany = falhar;
+    const logOriginal = console.error;
+    let erroRegistrado;
+    console.error = (error) => { erroRegistrado = error; };
+    try {
+      const response = operacao === 'cadastro'
+        ? await cadastrar(dados)
+        : await enviar(operacao === 'busca' ? `/api/professores/${id}` : '/api/professores');
+      assert.equal(response.status, 500);
+      assert.deepEqual(response.body, { mensagem: 'Erro interno do servidor.' });
+      assert.equal(erroRegistrado, erro);
+    } finally {
+      console.error = logOriginal;
+    }
+  });
+}
+
+test('rotas de atualização e exclusão não são implementadas', async () => {
+  for (const method of ['PUT', 'PATCH', 'DELETE']) {
+    const response = await fetch(`${baseUrl}/api/professores/${id}`, { method });
+    assert.equal(response.status, 404);
+  }
+});
