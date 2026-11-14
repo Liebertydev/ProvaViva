@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { randomInt, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import test from 'node:test';
-import app from '../dist/app.js';
-import prisma from '../dist/database/prisma.js';
-import alunoRepository from '../dist/repositories/aluno.repository.js';
+import app from '../src/app.js';
+import prisma from '../src/database/prisma.js';
+import alunoRepository from '../src/repositories/aluno.repository.js';
 
 // Executar após npm run build. Usa o banco configurado no backend/.env.
 test('POST /api/alunos — integração com PostgreSQL', { timeout: 60_000 }, async (t) => {
@@ -94,11 +94,14 @@ test('POST /api/alunos — integração com PostgreSQL', { timeout: 60_000 }, as
     for (const [descricao, body] of invalidos) {
       await t.test(`${descricao} retorna 400 sem consultar o repository`, async () => {
         const buscarOriginal = alunoRepository.buscarPorMatricula;
+        const criarOriginal = alunoRepository.criar;
         let consultas = 0;
-        alunoRepository.buscarPorMatricula = async () => {
+        const consultaInesperada = async () => {
           consultas++;
           throw new Error('O validator não deveria permitir esta consulta.');
         };
+        alunoRepository.buscarPorMatricula = consultaInesperada;
+        alunoRepository.criar = consultaInesperada;
         try {
           const response = await enviar(body);
           assert.equal(response.status, 400);
@@ -106,6 +109,7 @@ test('POST /api/alunos — integração com PostgreSQL', { timeout: 60_000 }, as
           assert.equal(consultas, 0);
         } finally {
           alunoRepository.buscarPorMatricula = buscarOriginal;
+          alunoRepository.criar = criarOriginal;
         }
       });
     }
@@ -118,37 +122,72 @@ test('POST /api/alunos — integração com PostgreSQL', { timeout: 60_000 }, as
       assert.deepEqual(await response.json(), { mensagem: 'JSON inválido.' });
     });
 
-    await t.test('matrícula já cadastrada retorna 409', async () => {
-      const response = await enviar(dados);
-      assert.equal(response.status, 409);
-      assert.deepEqual(response.body, { mensagem: 'Já existe um aluno com esta matrícula.' });
-    });
-
-    await t.test('cadastros simultâneos tratam o P2002 real e retornam 201 e 409', async () => {
-      const matriculaConcorrente = await reservarMatricula();
+    await t.test('service consulta a matrícula e retorna 409 sem chamar a criação', async () => {
       const buscarOriginal = alunoRepository.buscarPorMatricula;
       const criarOriginal = alunoRepository.criar;
       let consultas = 0;
-      let errosP2002 = 0;
+      let criacoes = 0;
+      alunoRepository.buscarPorMatricula = async (valor) => {
+        consultas++;
+        assert.equal(valor, dados.matricula);
+        return buscarOriginal(valor);
+      };
+      alunoRepository.criar = async () => {
+        criacoes++;
+        throw new Error('Não deve criar um aluno com matrícula já encontrada pelo service.');
+      };
+      try {
+        const response = await enviar(dados);
+        assert.equal(response.status, 409);
+        assert.deepEqual(response.body, { mensagem: 'Já existe um aluno com esta matrícula.' });
+        assert.equal(consultas, 1);
+        assert.equal(criacoes, 0);
+      } finally {
+        alunoRepository.buscarPorMatricula = buscarOriginal;
+        alunoRepository.criar = criarOriginal;
+      }
+    });
+
+    await t.test('repository também verifica a matrícula dentro da transação', async () => {
+      await assert.rejects(alunoRepository.criar(dados), (error) => {
+        assert.equal(error.statusCode, 409);
+        assert.equal(error.message, 'Já existe um aluno com esta matrícula.');
+        return true;
+      });
+      assert.equal(await prisma.aluno.count({ where: { matricula: dados.matricula } }), 1);
+    });
+
+    await t.test('transações concorrentes retornam 201 e 409 e mantêm um único aluno', async () => {
+      const matriculaConcorrente = await reservarMatricula();
+      const transacaoOriginal = prisma.$transaction.bind(prisma);
+      let transacoes = 0;
+      let consultas = 0;
+      const leiturasIniciais = [];
+      const conflitos = [];
       let liberar;
       const barreira = new Promise((resolve) => { liberar = resolve; });
       const timeout = setTimeout(() => liberar(), 5000);
 
-      // Faz as duas consultas terminarem antes de liberar os inserts concorrentes.
-      alunoRepository.buscarPorMatricula = async (valor) => {
-        const aluno = await buscarOriginal(valor);
-        if (valor === matriculaConcorrente) {
-          consultas++;
-          if (consultas === 2) liberar();
-          await barreira;
-        }
-        return aluno;
-      };
-      alunoRepository.criar = async (body) => {
+      // As duas transações leem a matrícula ainda livre antes de criar o aluno.
+      prisma.$transaction = async (callback, options) => {
+        transacoes++;
         try {
-          return await criarOriginal(body);
+          return await transacaoOriginal(async (transacao) => {
+            const buscarOriginal = transacao.aluno.findUnique;
+            transacao.aluno.findUnique = async (args) => {
+              const aluno = await buscarOriginal(args);
+              if (args.where.matricula === matriculaConcorrente && consultas < 2) {
+                consultas++;
+                leiturasIniciais.push(aluno);
+                if (consultas === 2) liberar();
+                await barreira;
+              }
+              return aluno;
+            };
+            return callback(transacao);
+          }, options);
         } catch (error) {
-          if (error.code === 'P2002') errosP2002++;
+          if (error.code === 'P2002') conflitos.push(error.code);
           throw error;
         }
       };
@@ -159,27 +198,89 @@ test('POST /api/alunos — integração com PostgreSQL', { timeout: 60_000 }, as
           enviar({ nome: `${marcador} concorrente B`, matricula: matriculaConcorrente, turno: 'MANHA' }),
         ]);
         assert.deepEqual(respostas.map((r) => r.status).sort(), [201, 409]);
-        assert.equal(errosP2002, 1);
+        assert.deepEqual(leiturasIniciais, [null, null]);
+        assert.equal(transacoes, 2);
+        assert.deepEqual(conflitos, ['P2002']);
+        assert.deepEqual(respostas.find((r) => r.status === 409).body, {
+          mensagem: 'Já existe um aluno com esta matrícula.',
+        });
         assert.equal(await prisma.aluno.count({ where: { matricula: matriculaConcorrente } }), 1);
       } finally {
         liberar();
         clearTimeout(timeout);
-        alunoRepository.buscarPorMatricula = buscarOriginal;
-        alunoRepository.criar = criarOriginal;
+        prisma.$transaction = transacaoOriginal;
+      }
+    });
+
+    await t.test('P2002 é traduzido pelo repository para HTTP 409', async () => {
+      const transacaoOriginal = prisma.$transaction;
+      prisma.$transaction = async () => {
+        const error = new Error('Restrição de unicidade.');
+        error.code = 'P2002';
+        throw error;
+      };
+      try {
+        const response = await enviar({ ...dados, matricula: await reservarMatricula() });
+        assert.equal(response.status, 409);
+        assert.deepEqual(response.body, { mensagem: 'Já existe um aluno com esta matrícula.' });
+      } finally {
+        prisma.$transaction = transacaoOriginal;
+      }
+    });
+
+    await t.test('falha na transação retorna 500 genérico sem repetir a operação', async () => {
+      const transacaoOriginal = prisma.$transaction;
+      const logOriginal = console.error;
+      let tentativas = 0;
+      prisma.$transaction = async () => {
+        tentativas++;
+        const error = new Error('Conflito transacional.');
+        error.code = 'P2034';
+        throw error;
+      };
+      console.error = () => {};
+      try {
+        const response = await enviar({ ...dados, matricula: await reservarMatricula() });
+        assert.equal(response.status, 500);
+        assert.equal(tentativas, 1);
+        assert.deepEqual(response.body, { mensagem: 'Erro interno do servidor.' });
+      } finally {
+        prisma.$transaction = transacaoOriginal;
+        console.error = logOriginal;
+      }
+    });
+
+    await t.test('falha antes do commit desfaz o cadastro inteiro', async () => {
+      const matriculaRollback = await reservarMatricula();
+      const transacaoOriginal = prisma.$transaction.bind(prisma);
+      const logOriginal = console.error;
+      prisma.$transaction = (callback, options) => {
+        return transacaoOriginal(async (transacao) => {
+          await callback(transacao);
+          throw new Error('Falha simulada antes do commit.');
+        }, options);
+      };
+      console.error = () => {};
+      try {
+        const response = await enviar({ ...dados, matricula: matriculaRollback });
+        assert.equal(response.status, 500);
+        assert.deepEqual(response.body, { mensagem: 'Erro interno do servidor.' });
+        assert.equal(await prisma.aluno.count({ where: { matricula: matriculaRollback } }), 0);
+      } finally {
+        prisma.$transaction = transacaoOriginal;
+        console.error = logOriginal;
       }
     });
 
     await t.test('erro inesperado retorna 500 sem expor detalhes internos', async () => {
       const criarOriginal = alunoRepository.criar;
       const logOriginal = console.error;
-      let errosRegistrados = 0;
       alunoRepository.criar = async () => { throw new Error('Detalhe interno do teste.'); };
-      console.error = () => { errosRegistrados++; };
+      console.error = () => {};
       try {
         const response = await enviar({ ...dados, matricula: await reservarMatricula() });
         assert.equal(response.status, 500);
         assert.deepEqual(response.body, { mensagem: 'Erro interno do servidor.' });
-        assert.equal(errosRegistrados, 1);
       } finally {
         alunoRepository.criar = criarOriginal;
         console.error = logOriginal;

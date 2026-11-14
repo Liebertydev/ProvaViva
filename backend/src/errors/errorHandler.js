@@ -1,12 +1,11 @@
 
-import type { Request, Response, NextFunction } from 'express';
 import AppError from './AppError.js';
 
 export default function errorHandler(
-  error: unknown,
-  req: Request,
-  res: Response,
-  next: NextFunction
+  error,
+  req,
+  res,
+  next
 ) {
   if (error instanceof AppError) {
     return res.status(error.statusCode).json({

@@ -5,9 +5,9 @@ import alunoValidator from '../validators/aluno.validator.js';
 const alunoRoutes = Router();
 
 alunoRoutes.post(
-    '/',
-    alunoValidator.validarCriarAluno,
-    alunoController.criarAluno
+  '/',
+  alunoValidator.validarCriarAluno,
+  alunoController.criarAluno
 );
 
 export default alunoRoutes;

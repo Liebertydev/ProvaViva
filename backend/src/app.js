@@ -1,7 +1,7 @@
 
 import express from 'express';
 import cors from 'cors';
-import  errorHandler  from './errors/errorHandler.js';
+import errorHandler from './errors/errorHandler.js';
 import alunoRoutes from './routes/aluno.routes.js';
 
 const app = express();
