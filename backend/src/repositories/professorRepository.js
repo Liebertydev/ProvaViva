@@ -5,6 +5,10 @@ const buscarPorMatricula = (matricula) => {
   return prisma.professor.findUnique({ where: { matricula } });
 };
 
+const buscarPorId = (id) => {
+  return prisma.professor.findUnique({ where: { id } });
+};
+
 const criar = async (dados) => {
   try {
     return await prisma.$transaction(async (tx) => {
@@ -34,4 +38,4 @@ const criar = async (dados) => {
   }
 };
 
-export default { buscarPorMatricula, criar };
+export default { buscarPorMatricula, buscarPorId, criar };

@@ -2,6 +2,16 @@ import AppError from '../errors/AppError.js';
 import professorRepository from '../repositories/professorRepository.js';
 
 class ProfessorService {
+  async buscarProfessorPorId(id) {
+    const professor = await professorRepository.buscarPorId(id);
+
+    if (!professor) {
+      throw new AppError('Professor não encontrado.', 404);
+    }
+
+    return professor;
+  }
+
   async criarProfessor(dados) {
     const professorExistente = await professorRepository.buscarPorMatricula(dados.matricula);
 

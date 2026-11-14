@@ -1,3 +1,5 @@
+import commonValidator from './commonValidator.js';
+
 const validarCriarProfessor = (req, res, next) => {
   const dados = req.body;
 
@@ -27,4 +29,15 @@ const validarCriarProfessor = (req, res, next) => {
   next();
 };
 
-export default { validarCriarProfessor };
+const validarIdProfessor = (req, res, next) => {
+  const erroId = commonValidator.validarUuid(req.params.id);
+
+  if (erroId) {
+    return res.status(400).json({ mensagem: erroId });
+  }
+
+  req.professorId = req.params.id.toLowerCase();
+  return next();
+};
+
+export default { validarCriarProfessor, validarIdProfessor };

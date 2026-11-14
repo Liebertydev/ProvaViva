@@ -178,7 +178,44 @@ test('POST converte P2002 em 409 sem repetir a transação', async () => {
   assert.equal(transacoes, 1);
 });
 
-for (const operacao of ['cadastro']) {
+test('GET por ID consulta o UUID como string e retorna 200', async () => {
+  prisma.professor.findUnique = async (args) => {
+    assert.deepEqual(args, { where: { id } });
+    return professor;
+  };
+  const response = await enviar(`/api/professores/${id}`);
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body, professor);
+});
+
+test('GET por ID normaliza letras maiúsculas do UUID', async () => {
+  prisma.professor.findUnique = async (args) => {
+    assert.deepEqual(args, { where: { id } });
+    return professor;
+  };
+  const response = await enviar(`/api/professores/${id.toUpperCase()}`);
+  assert.equal(response.status, 200);
+  assert.equal(response.body.id, id);
+});
+
+test('GET por ID retorna 404 se o professor não existir', async () => {
+  const response = await enviar(`/api/professores/${id}`);
+  assert.equal(response.status, 404);
+  assert.deepEqual(response.body, { mensagem: 'Professor não encontrado.' });
+});
+
+test('GET por ID rejeita formatos inválidos com 400 antes de consultar o banco', async () => {
+  let consultas = 0;
+  prisma.professor.findUnique = async () => { consultas++; return null; };
+  for (const valor of ['42', '0', 'invalido', id.slice(1), `${id}0`, `${id}\n`, ` ${id}`, id.replace('f', 'g')]) {
+    const response = await enviar(`/api/professores/${encodeURIComponent(valor)}`);
+    assert.equal(response.status, 400);
+    assert.deepEqual(response.body, { mensagem: "Campo 'id' inválido." });
+  }
+  assert.equal(consultas, 0);
+});
+
+for (const operacao of ['cadastro', 'busca']) {
   test(`falha inesperada na ${operacao} chega ao handler e retorna 500 sem detalhes`, async () => {
     const erro = new Error('Detalhe interno que não deve ir para a resposta.');
     const falhar = async () => { throw erro; };
