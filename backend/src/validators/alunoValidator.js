@@ -1,3 +1,5 @@
+import commonValidator from './commonValidator.js';
+
 const validarCriarAluno = (req, res, next) => {
   const dados = req.body;
 
@@ -32,4 +34,16 @@ const validarCriarAluno = (req, res, next) => {
   next();
 };
 
-export default { validarCriarAluno };
+const validarIdAluno = (req, res, next) => {
+  const erroId = commonValidator.validarId(req.params.id);
+
+  if (erroId) {
+    return res.status(400).json({ mensagem: erroId });
+  }
+
+  req.alunoId = Number(req.params.id);
+
+  return next();
+};
+
+export default { validarCriarAluno, validarIdAluno };

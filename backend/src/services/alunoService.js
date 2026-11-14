@@ -1,7 +1,17 @@
 import AppError from '../errors/AppError.js';
-import alunoRepository from '../repositories/aluno.repository.js';
+import alunoRepository from '../repositories/alunoRepository.js';
 
 class AlunoService {
+  async buscarAlunoPorId(id) {
+    const aluno = await alunoRepository.buscarPorId(id);
+
+    if (!aluno) {
+      throw new AppError('Aluno não encontrado.', 404);
+    }
+
+    return aluno;
+  }
+
   async criarAluno(dados) {
     try {
       const alunoExistente = await alunoRepository.buscarPorMatricula(dados.matricula);
@@ -13,7 +23,7 @@ class AlunoService {
       return await alunoRepository.criar(dados);
     } catch (error) {
       throw new AppError(
-        error?.statusCode ? error.message : 'Erro interno do servidor.',
+        error?.message ? error.message : 'Erro interno do servidor.',
         error?.statusCode || 500,
       );
     }

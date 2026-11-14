@@ -4,7 +4,7 @@ import { once } from 'node:events';
 import test from 'node:test';
 import app from '../src/app.js';
 import prisma from '../src/database/prisma.js';
-import alunoRepository from '../src/repositories/aluno.repository.js';
+import alunoRepository from '../src/repositories/alunoRepository.js';
 
 // Executar após npm run build. Usa o banco configurado no backend/.env.
 test('POST /api/alunos — integração com PostgreSQL', { timeout: 60_000 }, async (t) => {
@@ -51,7 +51,7 @@ test('POST /api/alunos — integração com PostgreSQL', { timeout: 60_000 }, as
       assert.equal(response.body.turno, 'MANHA');
       assert.equal(response.body.ativo, true);
       assert.equal(response.body.desativadoEm, null);
-      assert.equal(typeof response.body.id, 'string');
+      assert(Number.isSafeInteger(response.body.id));
       assert(!Number.isNaN(Date.parse(response.body.createdAt)));
       assert(!Number.isNaN(Date.parse(response.body.updatedAt)));
       const persistido = await prisma.aluno.findUnique({ where: { matricula } });

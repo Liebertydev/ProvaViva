@@ -4,8 +4,14 @@ import AppError from '../errors/AppError.js';
 const buscarPorMatricula = (matricula) => {
   return prisma.aluno.findUnique({
     where: {
-      matricula: matricula
+      matricula,
     }
+  });
+};
+
+const buscarPorId = (id) => {
+  return prisma.aluno.findUnique({
+    where: { id },
   });
 };
 
@@ -39,4 +45,4 @@ const criar = async (dados) => {
   }
 };
 
-export default { buscarPorMatricula, criar };
+export default { buscarPorMatricula, buscarPorId, criar };
