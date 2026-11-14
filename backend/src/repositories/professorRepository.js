@@ -9,6 +9,11 @@ const buscarPorId = (id) => {
   return prisma.professor.findUnique({ where: { id } });
 };
 
+const listarTodos = () => {
+  // Segue a listagem de alunos: inclui registros ativos e inativos.
+  return prisma.professor.findMany();
+};
+
 const criar = async (dados) => {
   try {
     return await prisma.$transaction(async (tx) => {
@@ -38,4 +43,4 @@ const criar = async (dados) => {
   }
 };
 
-export default { buscarPorMatricula, buscarPorId, criar };
+export default { buscarPorMatricula, buscarPorId, listarTodos, criar };

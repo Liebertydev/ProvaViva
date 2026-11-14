@@ -215,7 +215,24 @@ test('GET por ID rejeita formatos inválidos com 400 antes de consultar o banco'
   assert.equal(consultas, 0);
 });
 
-for (const operacao of ['cadastro', 'busca']) {
+test('GET lista todos os professores, incluindo inativos, com 200', async () => {
+  const professores = [professor, { ...professor, id: '91cce207-65a7-4439-8b7e-c241eaef1009', ativo: false }];
+  prisma.professor.findMany = async (...args) => {
+    assert.deepEqual(args, []);
+    return professores;
+  };
+  const response = await enviar('/api/professores');
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body, professores);
+});
+
+test('GET lista vazia retorna 200 e array vazio', async () => {
+  const response = await enviar('/api/professores');
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body, []);
+});
+
+for (const operacao of ['cadastro', 'busca', 'listagem']) {
   test(`falha inesperada na ${operacao} chega ao handler e retorna 500 sem detalhes`, async () => {
     const erro = new Error('Detalhe interno que não deve ir para a resposta.');
     const falhar = async () => { throw erro; };

@@ -2,6 +2,10 @@ import AppError from '../errors/AppError.js';
 import professorRepository from '../repositories/professorRepository.js';
 
 class ProfessorService {
+  async listarProfessores() {
+    return professorRepository.listarTodos();
+  }
+
   async buscarProfessorPorId(id) {
     const professor = await professorRepository.buscarPorId(id);
 
