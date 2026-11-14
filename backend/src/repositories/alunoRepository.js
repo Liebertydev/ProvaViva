@@ -15,6 +15,11 @@ const buscarPorId = (id) => {
   });
 };
 
+const listarTodos = () => {
+  // Inclui alunos inativos; a listagem não filtra pelo status.
+  return prisma.aluno.findMany();
+};
+
 const criar = async (dados) => {
   try {
     return await prisma.$transaction(async (tx) => {
@@ -45,4 +50,4 @@ const criar = async (dados) => {
   }
 };
 
-export default { buscarPorMatricula, buscarPorId, criar };
+export default { buscarPorMatricula, buscarPorId, listarTodos, criar };

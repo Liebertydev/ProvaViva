@@ -41,6 +41,7 @@ const validarIdAluno = (req, res, next) => {
     return res.status(400).json({ mensagem: erroId });
   }
 
+  // Encaminha ao controller o ID já validado e convertido.
   req.alunoId = Number(req.params.id);
 
   return next();

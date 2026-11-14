@@ -287,12 +287,13 @@ test('POST /api/alunos — integração com PostgreSQL', { timeout: 60_000 }, as
       }
     });
 
-    await t.test('GET /health mantém o comportamento e listagem não é implementada', async () => {
+    await t.test('GET /health mantém o comportamento e listagem retorna uma lista', async () => {
       const health = await fetch(`${baseUrl}/health`);
       assert.equal(health.status, 200);
       assert.deepEqual(await health.json(), { status: 'ok', message: 'API ProvaViva funcionando!' });
       const listagem = await fetch(`${baseUrl}/api/alunos`);
-      assert.equal(listagem.status, 404);
+      assert.equal(listagem.status, 200);
+      assert(Array.isArray(await listagem.json()));
     });
   } finally {
     if (server) await new Promise((resolve) => server.close(resolve));

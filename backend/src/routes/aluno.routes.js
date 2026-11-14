@@ -4,6 +4,8 @@ import alunoValidator from '../validators/alunoValidator.js';
 
 const alunoRoutes = Router();
 
+alunoRoutes.get('/', alunoController.listarAlunos);
+
 alunoRoutes.get(
   '/:id',
   alunoValidator.validarIdAluno,

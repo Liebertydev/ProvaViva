@@ -5,6 +5,7 @@ const validarId = (id) => {
 
   const idNumerico = Number(id);
 
+  // Prisma Int no PostgreSQL usa inteiro assinado de 32 bits.
   if (!Number.isSafeInteger(idNumerico) || idNumerico > 2147483647) {
     return "Campo 'id' inválido.";
   }
