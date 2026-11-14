@@ -7,7 +7,7 @@
 
 <ion-content class="ion-padding">
 
-  <h2>Modelo da folha — ProvaViva</h2>
+  <h2 class="titulo-preview">Modelo da folha — ProvaViva</h2>
 
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -16,7 +16,7 @@
     viewBox="0 0 210 297"
     class="folha-a4">
 
-    <!-- Fundo branco -->
+    <!-- Fundo branco da folha -->
     <rect
       x="0"
       y="0"
@@ -25,31 +25,47 @@
       fill="white"
     />
 
-    <!-- Título -->
-    <text
-      x="105"
-      y="22"
-      text-anchor="middle"
-      font-size="8"
-      font-weight="bold"
-      fill="black">
-      PROVAVIVA
-    </text>
+    <!-- Cabeçalho institucional: todas as coordenadas do SVG estão em mm. -->
+    <g class="cabecalho-folha" fill="black">
+      <rect x="15" y="15" width="180" height="45"
+            fill="none" stroke="black" stroke-width="0.3" />
 
-    <!-- Identificação -->
-    <text x="20" y="35" font-size="4.5" fill="black">
-      Nome: ___________________________________________
-    </text>
+      <text x="22" y="27" font-size="5.2" font-weight="bold">
+        Escola Queiroz de Holanda
+      </text>
+      <text x="188" y="26" text-anchor="end" font-size="3" fill="#555">
+        ProvaViva
+      </text>
 
-    <text x="20" y="48" font-size="5" fill="black">
+      <text x="22" y="41" font-size="4">Nome do aluno:</text>
+      <text x="22" y="53" font-size="4">Turma:</text>
+      <text x="96" y="53" font-size="4">Data:</text>
+      <text x="116" y="53" font-size="4">/</text>
+      <text x="129" y="53" font-size="4">/</text>
+      <text x="158" y="53" font-size="4">Nota:</text>
+
+      <!-- Linhas para preenchimento manual. -->
+      <g stroke="black" stroke-width="0.25">
+        <line x1="51" y1="42" x2="188" y2="42" />
+        <line x1="36" y1="54" x2="87" y2="54" />
+        <line x1="107" y1="54" x2="114" y2="54" />
+        <line x1="120" y1="54" x2="127" y2="54" />
+        <line x1="133" y1="54" x2="148" y2="54" />
+        <line x1="169" y1="54" x2="188" y2="54" />
+      </g>
+    </g>
+
+    <!-- MATRÍCULA -->
+    <text [attr.x]="modelo.largura / 2" [attr.y]="modelo.matricula.yInicial - 20" text-anchor="middle"
+          font-size="5" font-weight="bold" fill="black">
       MATRÍCULA
     </text>
 
-    <!-- Números das colunas: 1 a 8 -->
+    <!-- Número das 8 posições da matrícula -->
     @for (coluna of colunasMatricula; track coluna) {
       <text
         [attr.x]="modelo.matricula.xInicial + coluna * modelo.matricula.distanciaX"
-        y="59"
+        [attr.y]="modelo.matricula.yInicial - 9"
         text-anchor="middle"
         font-size="4"
         fill="black">
@@ -57,11 +73,12 @@
       </text>
     }
 
-    <!-- Números das linhas: 0 a 9 -->
+    <!-- Dígitos de 0 a 9 -->
     @for (digito of digitos; track digito) {
       <text
-        x="23"
-        [attr.y]="modelo.matricula.yInicial + digito * modelo.matricula.distanciaY + 1.4"
+        [attr.x]="modelo.matricula.xInicial - 12"
+        [attr.y]="modelo.matricula.yInicial + digito * modelo.matricula.distanciaY"
+        dominant-baseline="central"
         text-anchor="middle"
         font-size="4"
         fill="black">
@@ -69,13 +86,63 @@
       </text>
     }
 
-    <!-- Bolinhas -->
+    <!-- 80 bolinhas da matrícula -->
     @for (coluna of colunasMatricula; track coluna) {
       @for (digito of digitos; track digito) {
         <circle
           [attr.cx]="modelo.matricula.xInicial + coluna * modelo.matricula.distanciaX"
           [attr.cy]="modelo.matricula.yInicial + digito * modelo.matricula.distanciaY"
           [attr.r]="modelo.matricula.raio"
+          fill="white"
+          stroke="black"
+          stroke-width="0.35"
+        />
+      }
+    }
+
+    <!-- RESPOSTAS -->
+    <text
+      [attr.x]="modelo.largura / 2"
+      [attr.y]="modelo.respostas.yInicial - 20"
+      text-anchor="middle"
+      font-size="5"
+      font-weight="bold"
+      fill="black">
+      RESPOSTAS
+    </text>
+
+    <!-- Letras A, B, C, D, E -->
+    @for (alternativa of alternativas; track alternativa; let coluna = $index) {
+      <text
+        [attr.x]="modelo.respostas.xInicial + coluna * modelo.respostas.distanciaX"
+        [attr.y]="modelo.respostas.yInicial - 9"
+        text-anchor="middle"
+        font-size="4.5"
+        fill="black">
+        {{ alternativa }}
+      </text>
+    }
+
+    <!-- Números das questões: 1 a 10 -->
+    @for (questao of questoes; track questao) {
+      <text
+        [attr.x]="modelo.respostas.xInicial - 16"
+        [attr.y]="modelo.respostas.yInicial + questao * modelo.respostas.distanciaY"
+        dominant-baseline="central"
+        text-anchor="middle"
+        font-size="4"
+        fill="black">
+        {{ questao + 1 }}
+      </text>
+    }
+
+    <!-- 50 bolinhas das respostas -->
+    @for (questao of questoes; track questao) {
+      @for (alternativa of alternativas; track alternativa; let coluna = $index) {
+        <circle
+          [attr.cx]="modelo.respostas.xInicial + coluna * modelo.respostas.distanciaX"
+          [attr.cy]="modelo.respostas.yInicial + questao * modelo.respostas.distanciaY"
+          [attr.r]="modelo.respostas.raio"
           fill="white"
           stroke="black"
           stroke-width="0.35"
