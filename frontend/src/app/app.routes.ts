@@ -10,4 +10,8 @@ export const routes: Routes = [
     redirectTo: 'home',
     pathMatch: 'full',
   },
+  {
+    path: 'folha',
+    loadComponent: () => import('./folha/folha.page').then((m) => m.FolhaPage),
+  },
 ];

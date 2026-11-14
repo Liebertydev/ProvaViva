@@ -1,0 +1,88 @@
+
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Folha de respostas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <h2>Modelo da folha — ProvaViva</h2>
+
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="210mm"
+    height="297mm"
+    viewBox="0 0 210 297"
+    class="folha-a4">
+
+    <!-- Fundo branco -->
+    <rect
+      x="0"
+      y="0"
+      width="210"
+      height="297"
+      fill="white"
+    />
+
+    <!-- Título -->
+    <text
+      x="105"
+      y="22"
+      text-anchor="middle"
+      font-size="8"
+      font-weight="bold"
+      fill="black">
+      PROVAVIVA
+    </text>
+
+    <!-- Identificação -->
+    <text x="20" y="35" font-size="4.5" fill="black">
+      Nome: ___________________________________________
+    </text>
+
+    <text x="20" y="48" font-size="5" fill="black">
+      MATRÍCULA
+    </text>
+
+    <!-- Números das colunas: 1 a 8 -->
+    @for (coluna of colunasMatricula; track coluna) {
+      <text
+        [attr.x]="modelo.matricula.xInicial + coluna * modelo.matricula.distanciaX"
+        y="59"
+        text-anchor="middle"
+        font-size="4"
+        fill="black">
+        {{ coluna + 1 }}
+      </text>
+    }
+
+    <!-- Números das linhas: 0 a 9 -->
+    @for (digito of digitos; track digito) {
+      <text
+        x="23"
+        [attr.y]="modelo.matricula.yInicial + digito * modelo.matricula.distanciaY + 1.4"
+        text-anchor="middle"
+        font-size="4"
+        fill="black">
+        {{ digito }}
+      </text>
+    }
+
+    <!-- Bolinhas -->
+    @for (coluna of colunasMatricula; track coluna) {
+      @for (digito of digitos; track digito) {
+        <circle
+          [attr.cx]="modelo.matricula.xInicial + coluna * modelo.matricula.distanciaX"
+          [attr.cy]="modelo.matricula.yInicial + digito * modelo.matricula.distanciaY"
+          [attr.r]="modelo.matricula.raio"
+          fill="white"
+          stroke="black"
+          stroke-width="0.35"
+        />
+      }
+    }
+
+  </svg>
+
+</ion-content>
