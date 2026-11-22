@@ -12,12 +12,12 @@ const camposResumo = {
 
 const camposDetalhe = { ...camposResumo, gabarito: true };
 
-const listarTodos = () => {
-  return prisma.avaliacao.findMany({ select: camposResumo });
+const listarTodos = (professorId) => {
+  return prisma.avaliacao.findMany({ where: { professorId }, select: camposResumo });
 };
 
-const buscarPorId = (id, conexao = prisma) => {
-  return conexao.avaliacao.findUnique({ where: { id }, select: camposDetalhe });
+const buscarPorId = (id, professorId, conexao = prisma) => {
+  return conexao.avaliacao.findFirst({ where: { id, professorId }, select: camposDetalhe });
 };
 
 const executarTransacao = (operacao) => {
@@ -32,7 +32,7 @@ const buscarPorIdParaAtualizar = async (id, tx) => {
 
   if (registros.length === 0) return null;
 
-  return buscarPorId(id, tx);
+  return tx.avaliacao.findUnique({ where: { id }, select: camposDetalhe });
 };
 
 const possuiResultados = async (avaliacaoId, tx) => {

@@ -30,23 +30,19 @@ const validarCriarAvaliacao = (req, res, next) => {
     return res.status(400).json({ mensagem: 'Informe os dados da avaliação.' });
   }
 
-  const camposPermitidos = ['titulo', 'professorId', 'quantidadeQuestoes', 'gabarito'];
+  const camposPermitidos = ['titulo', 'quantidadeQuestoes', 'gabarito'];
   for (const campo of Object.keys(dados)) {
     if (!camposPermitidos.includes(campo)) {
       return res.status(400).json({
-        mensagem: 'Campos permitidos: titulo, professorId, quantidadeQuestoes e gabarito.',
+        mensagem: 'Campos permitidos: titulo, quantidadeQuestoes e gabarito.',
       });
     }
   }
 
-  const { titulo, professorId, quantidadeQuestoes, gabarito } = dados;
+  const { titulo, quantidadeQuestoes, gabarito } = dados;
 
   if (typeof titulo !== 'string' || !titulo.trim()) {
     return res.status(400).json({ mensagem: 'Título é obrigatório e deve ser uma string não vazia.' });
-  }
-
-  if (commonValidator.validarUuid(professorId)) {
-    return res.status(400).json({ mensagem: 'professorId é obrigatório e deve ser um UUID válido.' });
   }
 
   if (quantidadeQuestoes !== 10) {
@@ -56,7 +52,7 @@ const validarCriarAvaliacao = (req, res, next) => {
   const mensagem = validarGabarito(gabarito);
   if (mensagem) return res.status(400).json({ mensagem });
 
-  req.body = { titulo: titulo.trim(), professorId: professorId.toLowerCase(), quantidadeQuestoes, gabarito };
+  req.body = { titulo: titulo.trim(), quantidadeQuestoes, gabarito };
   next();
 };
 

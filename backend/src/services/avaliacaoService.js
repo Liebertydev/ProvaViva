@@ -3,12 +3,12 @@ import professorRepository from '../repositories/professorRepository.js';
 import avaliacaoRepository from '../repositories/avaliacaoRepository.js';
 
 class AvaliacaoService {
-  async listarAvaliacoes() {
-    return avaliacaoRepository.listarTodos();
+  async listarAvaliacoes(professorId) {
+    return avaliacaoRepository.listarTodos(professorId);
   }
 
-  async buscarAvaliacaoPorId(id) {
-    const avaliacao = await avaliacaoRepository.buscarPorId(id);
+  async buscarAvaliacaoPorId(id, professorId) {
+    const avaliacao = await avaliacaoRepository.buscarPorId(id, professorId);
 
     if (!avaliacao) {
       throw new AppError('Avaliação não encontrada.', 404);
@@ -17,11 +17,15 @@ class AvaliacaoService {
     return avaliacao;
   }
 
-  async atualizarAvaliacao(id, dados) {
+  async atualizarAvaliacao(id, professorId, dados) {
     return avaliacaoRepository.executarTransacao(async (tx) => {
       const avaliacao = await avaliacaoRepository.buscarPorIdParaAtualizar(id, tx);
 
       if (!avaliacao) {
+        throw new AppError('Avaliação não encontrada.', 404);
+      }
+
+      if (avaliacao.professorId !== professorId) {
         throw new AppError('Avaliação não encontrada.', 404);
       }
 
@@ -52,8 +56,8 @@ class AvaliacaoService {
     });
   }
 
-  async criarAvaliacao(dados) {
-    const professor = await professorRepository.buscarPorId(dados.professorId);
+  async criarAvaliacao(professorId, dados) {
+    const professor = await professorRepository.buscarPorId(professorId);
 
     if (!professor) {
       throw new AppError('Professor não encontrado.', 404);
@@ -63,7 +67,7 @@ class AvaliacaoService {
       throw new AppError('Professor inativo não pode cadastrar avaliações.', 409);
     }
 
-    return avaliacaoRepository.criar(dados);
+    return avaliacaoRepository.criar({ ...dados, professorId });
   }
 }
 

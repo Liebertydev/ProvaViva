@@ -2,10 +2,9 @@ import avaliacaoService from '../services/avaliacaoService.js';
 
 const criarAvaliacao = async (req, res, next) => {
   try {
-    const { titulo, professorId, quantidadeQuestoes, gabarito } = req.body;
-    const avaliacao = await avaliacaoService.criarAvaliacao({
+    const { titulo, quantidadeQuestoes, gabarito } = req.body;
+    const avaliacao = await avaliacaoService.criarAvaliacao(req.professorId, {
       titulo,
-      professorId,
       quantidadeQuestoes,
       gabarito,
     });
@@ -16,9 +15,9 @@ const criarAvaliacao = async (req, res, next) => {
   }
 };
 
-const listarAvaliacoes = async (_req, res, next) => {
+const listarAvaliacoes = async (req, res, next) => {
   try {
-    const avaliacoes = await avaliacaoService.listarAvaliacoes();
+    const avaliacoes = await avaliacaoService.listarAvaliacoes(req.professorId);
     return res.status(200).json(avaliacoes);
   } catch (error) {
     next(error);
@@ -27,7 +26,7 @@ const listarAvaliacoes = async (_req, res, next) => {
 
 const buscarAvaliacaoPorId = async (req, res, next) => {
   try {
-    const avaliacao = await avaliacaoService.buscarAvaliacaoPorId(req.avaliacaoId);
+    const avaliacao = await avaliacaoService.buscarAvaliacaoPorId(req.avaliacaoId, req.professorId);
     return res.status(200).json(avaliacao);
   } catch (error) {
     next(error);
@@ -36,7 +35,7 @@ const buscarAvaliacaoPorId = async (req, res, next) => {
 
 const atualizarAvaliacao = async (req, res, next) => {
   try {
-    const avaliacao = await avaliacaoService.atualizarAvaliacao(req.avaliacaoId, req.body);
+    const avaliacao = await avaliacaoService.atualizarAvaliacao(req.avaliacaoId, req.professorId, req.body);
     return res.status(200).json(avaliacao);
   } catch (error) {
     next(error);

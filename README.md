@@ -43,6 +43,22 @@ essa escolha deve ser reavaliada antes de uma atualização de versão principal
 cadastro e duplicidade concorrente. Os registros temporários são identificados
 por execução e removidos pelo próprio teste.
 
+### Login de professor
+
+Configure também `JWT_SECRET` com um segredo aleatório de pelo menos 32 bytes.
+O primeiro professor é criado por `POST /api/professores` com `nome`, `matricula`
+e `senha`; essa rota só aceita cadastro enquanto ainda não houver professor.
+Depois disso, ela exige autenticação. O login é `POST /api/auth/login`, com
+`matricula` e `senha`; a resposta contém um JWT Bearer válido por uma hora.
+As rotas de alunos, professores, avaliações e consultas de avaliações exigem
+`Authorization: Bearer <token>`. A senha é armazenada como hash scrypt; o hash
+nunca é incluído nas respostas.
+
+Professores já existentes antes da migração ficam sem senha e não conseguem
+entrar até que uma senha seja provisionada. A migração
+`20261122235000_professor_password` precisa ser aplicada ao banco antes de usar
+o novo cadastro/login.
+
 ## Módulo de avaliações
 
 O router de avaliações contém POST `/api/avaliacoes`, GET `/api/avaliacoes`,
