@@ -6,7 +6,7 @@ import alunoRoutes from './routes/aluno.routes.js';
 import professorRoutes from './routes/professor.routes.js';
 import avaliacaoRoutes from './routes/avaliacao.routes.js';
 import authRoutes from './routes/auth.routes.js';
-import autenticarProfessor from './middlewares/autenticarProfessor.js';
+import loginRequired from './middlewares/loginRequired.js';
 
 const app = express();
 
@@ -14,9 +14,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/alunos', autenticarProfessor, alunoRoutes);
+app.use('/api/alunos', loginRequired, alunoRoutes);
 app.use('/api/professores', professorRoutes);
-app.use('/api/avaliacoes', autenticarProfessor, avaliacaoRoutes);
+app.use('/api/avaliacoes', loginRequired, avaliacaoRoutes);
 
 app.get('/health', (_req, res) => {
   res.status(200).json({

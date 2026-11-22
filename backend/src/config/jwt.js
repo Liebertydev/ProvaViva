@@ -1,18 +1,22 @@
 import { SignJWT, jwtVerify } from 'jose';
-import jwtConfig from './jwtConfig.js';
+import authConfig from './auth.js';
+
+const duracaoTokenSegundos = 60 * 60;
+const algoritmo = 'HS256';
+const obterChave = () => new TextEncoder().encode(authConfig.jwtSecret);
 
 const gerarTokenProfessor = (professorId) => {
   return new SignJWT({ role: 'PROFESSOR' })
-    .setProtectedHeader({ alg: jwtConfig.algoritmo })
+    .setProtectedHeader({ alg: algoritmo })
     .setSubject(professorId)
     .setIssuedAt()
-    .setExpirationTime(`${jwtConfig.duracaoTokenSegundos}s`)
-    .sign(jwtConfig.obterChaveJwt());
+    .setExpirationTime(`${duracaoTokenSegundos}s`)
+    .sign(obterChave());
 };
 
 const verificarToken = async (token) => {
-  const { payload } = await jwtVerify(token, jwtConfig.obterChaveJwt(), {
-    algorithms: [jwtConfig.algoritmo],
+  const { payload } = await jwtVerify(token, obterChave(), {
+    algorithms: [algoritmo],
   });
 
   if (typeof payload.sub !== 'string' || payload.role !== 'PROFESSOR') {
@@ -22,4 +26,4 @@ const verificarToken = async (token) => {
   return { professorId: payload.sub, role: 'PROFESSOR' };
 };
 
-export default { gerarTokenProfessor, verificarToken };
+export default { gerarTokenProfessor, verificarToken, duracaoTokenSegundos };

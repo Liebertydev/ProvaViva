@@ -2,7 +2,6 @@ import AppError from '../errors/AppError.js';
 import professorRepository from '../repositories/professorRepository.js';
 import { verificarSenha } from '../utils/senha.js';
 import jwt from '../config/jwt.js';
-import jwtConfig from '../config/jwtConfig.js';
 
 class AuthService {
   async login(matricula, senha) {
@@ -18,7 +17,7 @@ class AuthService {
     return {
       token,
       tipo: 'Bearer',
-      expiraEm: jwtConfig.duracaoTokenSegundos,
+      expiraEm: jwt.duracaoTokenSegundos,
       professor: {
         id: professor.id,
         nome: professor.nome,
