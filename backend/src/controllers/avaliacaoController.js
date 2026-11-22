@@ -25,4 +25,13 @@ const listarAvaliacoes = async (_req, res, next) => {
   }
 };
 
-export default { criarAvaliacao, listarAvaliacoes };
+const buscarAvaliacaoPorId = async (req, res, next) => {
+  try {
+    const avaliacao = await avaliacaoService.buscarAvaliacaoPorId(req.avaliacaoId);
+    return res.status(200).json(avaliacao);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default { criarAvaliacao, listarAvaliacoes, buscarAvaliacaoPorId };

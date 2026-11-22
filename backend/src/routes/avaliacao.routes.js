@@ -6,6 +6,11 @@ const avaliacaoRoutes = Router();
 
 // O registro desta rota no app depende da decisão sobre a ausência de autenticação.
 avaliacaoRoutes.get('/', avaliacaoController.listarAvaliacoes);
+avaliacaoRoutes.get(
+  '/:id',
+  avaliacaoValidator.validarIdAvaliacao,
+  avaliacaoController.buscarAvaliacaoPorId
+);
 avaliacaoRoutes.post(
   '/',
   avaliacaoValidator.validarCriarAvaliacao,

@@ -7,6 +7,16 @@ class AvaliacaoService {
     return avaliacaoRepository.listarTodos();
   }
 
+  async buscarAvaliacaoPorId(id) {
+    const avaliacao = await avaliacaoRepository.buscarPorId(id);
+
+    if (!avaliacao) {
+      throw new AppError('Avaliação não encontrada.', 404);
+    }
+
+    return avaliacao;
+  }
+
   async criarAvaliacao(dados) {
     const professor = await professorRepository.buscarPorId(dados.professorId);
 

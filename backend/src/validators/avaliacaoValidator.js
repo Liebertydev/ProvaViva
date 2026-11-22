@@ -1,5 +1,13 @@
 import commonValidator from './commonValidator.js';
 
+const validarIdAvaliacao = (req, res, next) => {
+  const mensagem = commonValidator.validarUuid(req.params.id);
+  if (mensagem) return res.status(400).json({ mensagem });
+
+  req.avaliacaoId = req.params.id.toLowerCase();
+  next();
+};
+
 const validarCriarAvaliacao = (req, res, next) => {
   const dados = req.body;
 
@@ -45,4 +53,4 @@ const validarCriarAvaliacao = (req, res, next) => {
   next();
 };
 
-export default { validarCriarAvaliacao };
+export default { validarCriarAvaliacao, validarIdAvaliacao };
