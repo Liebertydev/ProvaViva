@@ -1,33 +1,51 @@
 import prisma from '../database/prisma.js';
-const listarTodos = () => {
-  return prisma.avaliacao.findMany({
-    select: {
-      id: true,
-      titulo: true,
-      quantidadeQuestoes: true,
-      professorId: true,
-      professor: { select: { id: true, nome: true, matricula: true } },
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+
+const camposResumo = {
+  id: true,
+  titulo: true,
+  quantidadeQuestoes: true,
+  professorId: true,
+  professor: { select: { id: true, nome: true, matricula: true } },
+  createdAt: true,
+  updatedAt: true,
 };
 
+const camposDetalhe = { ...camposResumo, gabarito: true };
+
+const listarTodos = () => {
+  return prisma.avaliacao.findMany({ select: camposResumo });
+};
 
 const buscarPorId = (id, conexao = prisma) => {
-  return conexao.avaliacao.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      titulo: true,
-      quantidadeQuestoes: true,
-      professorId: true,
-      professor: { select: { id: true, nome: true, matricula: true } },
-      createdAt: true,
-      updatedAt: true,
-      gabarito: true,
-    },
+  return conexao.avaliacao.findUnique({ where: { id }, select: camposDetalhe });
+};
+
+const executarTransacao = (operacao) => {
+  return prisma.$transaction(operacao, { isolationLevel: 'ReadCommitted' });
+};
+
+const buscarPorIdParaAtualizar = async (id, tx) => {
+  // Mantém a avaliação bloqueada até terminar a verificação e a atualização.
+  const registros = await tx.$queryRaw`
+    SELECT "id" FROM "Avaliacao" WHERE "id" = ${id} FOR UPDATE
+  `;
+
+  if (registros.length === 0) return null;
+
+  return buscarPorId(id, tx);
+};
+
+const possuiResultados = async (avaliacaoId, tx) => {
+  const resultado = await tx.resultado.findFirst({
+    where: { avaliacaoId },
+    select: { id: true },
   });
+
+  return resultado !== null;
+};
+
+const atualizar = (id, dados, tx) => {
+  return tx.avaliacao.update({ where: { id }, data: dados, select: camposDetalhe });
 };
 
 const criar = (dados) => {
@@ -41,4 +59,12 @@ const criar = (dados) => {
   });
 };
 
-export default { criar, listarTodos, buscarPorId };
+export default {
+  criar,
+  listarTodos,
+  buscarPorId,
+  executarTransacao,
+  buscarPorIdParaAtualizar,
+  possuiResultados,
+  atualizar,
+};

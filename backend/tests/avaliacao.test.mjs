@@ -181,9 +181,8 @@ for (const etapa of ['consulta', 'cadastro']) {
   });
 }
 
-test('somente o cadastro está definido no router de avaliações', async () => {
+test('PUT e DELETE continuam fora do router de avaliações', async () => {
   for (const [method, path] of [
-    ['GET', '/api/avaliacoes'], ['GET', `/api/avaliacoes/${avaliacao.id}`],
     ['PUT', `/api/avaliacoes/${avaliacao.id}`], ['DELETE', `/api/avaliacoes/${avaliacao.id}`],
   ]) {
     const response = await fetch(`${baseUrl}${path}`, { method });
