@@ -3,6 +3,7 @@ import { once } from 'node:events';
 import { after, before, beforeEach, test } from 'node:test';
 import app from '../src/app.js';
 import prisma from '../src/database/prisma.js';
+import jwt from '../src/config/jwt.js';
 
 const id = 'f3d1c9a2-7b6e-4d31-a935-86e47f2cb290';
 const professor = {
@@ -14,17 +15,25 @@ const professor = {
   createdAt: '2026-01-01T12:00:00.000Z',
   updatedAt: '2026-01-01T12:00:00.000Z',
 };
-const dados = { nome: professor.nome, matricula: professor.matricula };
+const dados = { nome: professor.nome, matricula: professor.matricula, senha: 'senha-prof-123' };
+const camposPublicos = {
+  id: true, nome: true, matricula: true, ativo: true, desativadoEm: true,
+  createdAt: true, updatedAt: true,
+};
 const originais = {
   findUnique: prisma.professor.findUnique,
   findMany: prisma.professor.findMany,
   create: prisma.professor.create,
   transaction: prisma.$transaction,
+  count: prisma.professor.count,
 };
 let server;
 let baseUrl;
+let token;
 
 before(async () => {
+  process.env.JWT_SECRET = 'segredo-de-teste-com-pelo-menos-trinta-e-dois-bytes';
+  token = await jwt.gerarTokenProfessor(id);
   server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -34,6 +43,7 @@ beforeEach(() => {
   // Todos os acessos usados pelas rotas são simulados; não há escrita no banco real.
   prisma.professor.findUnique = async () => null;
   prisma.professor.findMany = async () => [];
+  prisma.professor.count = async () => 0;
   prisma.professor.create = async () => {
     throw new Error('O cadastro deve usar a transação.');
   };
@@ -49,13 +59,16 @@ after(async () => {
   prisma.professor.findUnique = originais.findUnique;
   prisma.professor.findMany = originais.findMany;
   prisma.professor.create = originais.create;
+  prisma.professor.count = originais.count;
   prisma.$transaction = originais.transaction;
   if (server) await new Promise((resolve) => server.close(resolve));
   await prisma.$disconnect();
 });
 
 const enviar = async (path, options) => {
-  const response = await fetch(`${baseUrl}${path}`, options);
+  const headers = { ...(options?.headers ?? {}) };
+  if (path !== '/api/auth/login') headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(`${baseUrl}${path}`, { ...options, headers });
   return { status: response.status, body: await response.json() };
 };
 
@@ -65,10 +78,10 @@ const cadastrar = (body) => enviar('/api/professores', {
   body: JSON.stringify(body),
 });
 
-test('POST cadastra com 201, normaliza espaços e envia apenas nome e matrícula ao Prisma', async () => {
+test('POST cadastra com 201, normaliza dados e armazena hash da senha', async () => {
   const ordem = [];
   prisma.professor.findUnique = async (args) => {
-    assert.deepEqual(args, { where: { matricula: dados.matricula } });
+    assert.deepEqual(args, { where: { matricula: dados.matricula }, select: camposPublicos });
     ordem.push('consulta-service');
     return null;
   };
@@ -81,14 +94,24 @@ test('POST cadastra com 201, normaliza espaços e envia apenas nome e matrícula
         return null;
       },
       create: async (args) => {
-        assert.deepEqual(args, { data: dados });
+        assert.deepEqual(args.select, {
+          id: true, nome: true, matricula: true, ativo: true, desativadoEm: true,
+          createdAt: true, updatedAt: true,
+        });
+        assert.equal(args.data.nome, dados.nome);
+        assert.equal(args.data.matricula, dados.matricula);
+        assert.notEqual(args.data.senhaHash, dados.senha);
         ordem.push('criar');
         return professor;
       },
     } });
   };
 
-  const response = await cadastrar({ nome: `  ${dados.nome}  `, matricula: ` ${dados.matricula} ` });
+  const response = await cadastrar({
+    nome: `  ${dados.nome}  `,
+    matricula: ` ${dados.matricula} `,
+    senha: dados.senha,
+  });
   assert.equal(response.status, 201);
   assert.deepEqual(response.body, professor);
   assert.deepEqual(ordem, ['consulta-service', 'transacao', 'consulta-transacao', 'criar']);
@@ -180,7 +203,7 @@ test('POST converte P2002 em 409 sem repetir a transação', async () => {
 
 test('GET por ID consulta o UUID como string e retorna 200', async () => {
   prisma.professor.findUnique = async (args) => {
-    assert.deepEqual(args, { where: { id } });
+    assert.deepEqual(args, { where: { id }, select: camposPublicos });
     return professor;
   };
   const response = await enviar(`/api/professores/${id}`);
@@ -190,7 +213,7 @@ test('GET por ID consulta o UUID como string e retorna 200', async () => {
 
 test('GET por ID normaliza letras maiúsculas do UUID', async () => {
   prisma.professor.findUnique = async (args) => {
-    assert.deepEqual(args, { where: { id } });
+    assert.deepEqual(args, { where: { id }, select: camposPublicos });
     return professor;
   };
   const response = await enviar(`/api/professores/${id.toUpperCase()}`);
@@ -218,7 +241,7 @@ test('GET por ID rejeita formatos inválidos com 400 antes de consultar o banco'
 test('GET lista todos os professores, incluindo inativos, com 200', async () => {
   const professores = [professor, { ...professor, id: '91cce207-65a7-4439-8b7e-c241eaef1009', ativo: false }];
   prisma.professor.findMany = async (...args) => {
-    assert.deepEqual(args, []);
+    assert.deepEqual(args, [{ select: camposPublicos }]);
     return professores;
   };
   const response = await enviar('/api/professores');

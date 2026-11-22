@@ -1,5 +1,6 @@
 import AppError from '../errors/AppError.js';
 import professorRepository from '../repositories/professorRepository.js';
+import { gerarHashSenha } from '../utils/senha.js';
 
 class ProfessorService {
   async listarProfessores() {
@@ -24,7 +25,8 @@ class ProfessorService {
     }
 
     // Falhas inesperadas seguem para o tratamento global de erros.
-    return professorRepository.criar(dados);
+    const senhaHash = await gerarHashSenha(dados.senha);
+    return professorRepository.criar({ ...dados, senhaHash });
   }
 }
 
