@@ -1,4 +1,18 @@
 import prisma from '../database/prisma.js';
+const listarTodos = () => {
+  return prisma.avaliacao.findMany({
+    select: {
+      id: true,
+      titulo: true,
+      quantidadeQuestoes: true,
+      professorId: true,
+      professor: { select: { id: true, nome: true, matricula: true } },
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+};
+
 
 const criar = (dados) => {
   return prisma.avaliacao.create({
@@ -11,4 +25,4 @@ const criar = (dados) => {
   });
 };
 
-export default { criar };
+export default { criar, listarTodos };

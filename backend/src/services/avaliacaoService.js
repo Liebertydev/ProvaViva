@@ -3,6 +3,10 @@ import professorRepository from '../repositories/professorRepository.js';
 import avaliacaoRepository from '../repositories/avaliacaoRepository.js';
 
 class AvaliacaoService {
+  async listarAvaliacoes() {
+    return avaliacaoRepository.listarTodos();
+  }
+
   async criarAvaliacao(dados) {
     const professor = await professorRepository.buscarPorId(dados.professorId);
 
