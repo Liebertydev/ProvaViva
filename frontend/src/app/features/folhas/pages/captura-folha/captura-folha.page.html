@@ -1,0 +1,131 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Fotografar prova</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <main class="captura">
+    <h1>Captura da folha</h1>
+    <p class="mensagem-erro" [hidden]="!mensagemErro" role="alert">{{ mensagemErro }}</p>
+
+    <form class="painel" [hidden]="autenticado" (ngSubmit)="entrar()">
+      <h2>Entrar como professor</h2>
+      <p>Use sua conta para carregar as avaliações e salvar o resultado.</p>
+      <ion-item>
+        <ion-input
+          [(ngModel)]="email"
+          name="email"
+          type="email"
+          autocomplete="username"
+          label="E-mail"
+          labelPlacement="stacked"
+          required
+        >
+        </ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          [(ngModel)]="senha"
+          name="senha"
+          type="password"
+          autocomplete="current-password"
+          label="Senha"
+          labelPlacement="stacked"
+          required
+        >
+        </ion-input>
+      </ion-item>
+      <ion-button expand="block" type="submit" [disabled]="carregando">
+        @if (carregando) {
+        <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
+        Conectando... } @else { Entrar }
+      </ion-button>
+    </form>
+
+    <section class="painel" [hidden]="!autenticado">
+      <div class="cabecalho-painel">
+        <h2>{{ professorNome ? 'Olá, ' + professorNome : 'Sessão do professor ativa' }}</h2>
+        <ion-button fill="clear" size="small" (click)="sair()">Sair</ion-button>
+      </div>
+
+      <ion-item>
+        <ion-select
+          [(ngModel)]="avaliacaoId"
+          name="avaliacao"
+          label="Avaliação"
+          labelPlacement="stacked"
+          placeholder="Selecione a avaliação"
+          [disabled]="carregandoAvaliacoes || enviandoCorrecao || avaliacoes.length === 0"
+          (ionChange)="avaliacaoAlterada()"
+        >
+          <ion-select-option *appRepeat="let avaliacao of avaliacoes" [value]="avaliacao.id">
+            {{ avaliacao.titulo }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      <p class="orientacao" [hidden]="!carregandoAvaliacoes">Carregando avaliações...</p>
+      <p class="orientacao" [hidden]="carregandoAvaliacoes || avaliacoes.length > 0">
+        Nenhuma avaliação cadastrada para esta conta.
+      </p>
+
+      <p class="orientacao">
+        Coloque a folha sobre uma superfície escura, mantenha o celular na vertical e enquadre a página inteira.
+      </p>
+
+      <div class="moldura-foto" [class.com-foto]="fotoUrl !== null">
+        <img [hidden]="fotoUrl === null" [src]="fotoUrl" alt="Pré-visualização da folha fotografada" />
+        <p [hidden]="fotoUrl !== null" class="texto-vazio">A pré-visualização da foto vai aparecer aqui.</p>
+      </div>
+
+      <p class="aviso-envio" [hidden]="fotoUrl === null">
+        Foto salva no dispositivo. Confira o enquadramento antes de enviar para correção.
+      </p>
+
+      <div class="acoes">
+        <ion-button expand="block" (click)="tirarFoto()" [disabled]="carregando || enviandoCorrecao">
+          @if (carregando) {
+          <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
+          Abrindo câmera... } @else { {{ fotoUrl ? 'Tirar outra foto' : 'Abrir câmera' }} }
+        </ion-button>
+        @if (fotoUrl !== null) {
+        <ion-button
+          expand="block"
+          color="success"
+          [disabled]="enviandoCorrecao || !avaliacaoId"
+          (click)="corrigirFolha()"
+        >
+          @if (enviandoCorrecao) {
+          <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
+          Lendo folha e corrigindo... } @else { Enviar e calcular nota }
+        </ion-button>
+        <ion-button
+          expand="block"
+          fill="outline"
+          color="medium"
+          [disabled]="carregando || enviandoCorrecao"
+          (click)="removerFoto()"
+        >
+          Remover foto
+        </ion-button>
+        }
+      </div>
+
+      <section class="resultado" [hidden]="resultado === null">
+        <h2>Resultado da correção</h2>
+        <p><strong>Aluno:</strong> {{ resultado?.resultado?.aluno?.nome }}</p>
+        <p><strong>Matrícula:</strong> {{ resultado?.leitura?.matricula }}</p>
+        <p><strong>Avaliação:</strong> {{ resultado?.resultado?.avaliacao?.titulo }}</p>
+        <p class="nota">{{ resultado?.resultado?.nota?.toFixed(2) }} / 10</p>
+        <p><strong>Acertos:</strong> {{ resultado?.resultado?.acertos }} de 10</p>
+        <p><strong>Respostas lidas:</strong> {{ respostasLidas }}</p>
+        <p [hidden]="!questoesRevisao"><strong>Questões para revisar:</strong> {{ questoesRevisao }}</p>
+        <p class="status-resultado">
+          {{ resultado?.resultado?.status === 'REVISAO_PENDENTE' ? 'A leitura precisa de revisão manual.' : 'Folha
+          corrigida.' }}
+        </p>
+        <ion-button expand="block" fill="outline" (click)="novaCorrecao()">Fazer outra correção</ion-button>
+      </section>
+    </section>
+  </main>
+</ion-content>
