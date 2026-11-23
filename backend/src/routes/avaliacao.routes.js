@@ -4,7 +4,7 @@ import avaliacaoValidator from '../validators/avaliacaoValidator.js';
 
 const avaliacaoRoutes = Router();
 
-// Estas rotas permanecem fora do app até existir autenticação e autorização reais.
+// O app.js registra estas rotas atrás do middleware de autenticação do professor.
 avaliacaoRoutes.get('/', avaliacaoController.listarAvaliacoes);
 avaliacaoRoutes.get(
   '/:id',

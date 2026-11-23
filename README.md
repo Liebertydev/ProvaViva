@@ -63,11 +63,9 @@ ser aplicadas antes de usar o cadastro/login.
 ## Módulo de avaliações
 
 O router de avaliações contém POST `/api/avaliacoes`, GET `/api/avaliacoes`,
-GET `/api/avaliacoes/:id` e PATCH `/api/avaliacoes/:id`. Ele permanece sem registro
-em `app.js`, conforme a decisão de aguardar autenticação e autorização reais.
-A existência de um `professorId` válido não comprova a identidade de quem faz a
-requisição. Antes de publicar o módulo, será necessário autenticar o professor e
-definir/verificar as permissões de consulta e alteração.
+GET `/api/avaliacoes/:id` e PATCH `/api/avaliacoes/:id`, e está registrado em
+`app.js` atrás da autenticação JWT. As operações usam o professor autenticado
+para limitar as avaliações que podem ser listadas, consultadas ou alteradas.
 
 A listagem retorna os dados básicos da avaliação, datas e identificação básica do
 professor (id, nome e matrícula). A consulta por ID inclui também o gabarito.
@@ -83,12 +81,9 @@ o término da transação e serializa as edições da mesma avaliação, conform
 Não há tentativas automáticas de repetição; erros inesperados seguem para o
 tratamento global, que retorna 500 sem detalhes internos.
 
-**Limitação de concorrência:** ainda não existe o fluxo de correção. Uma correção
-futura que leia o gabarito fora de uma transação poderá calcular usando uma versão
-antiga e salvar o resultado depois de uma edição. Para garantir a consistência
-de ponta a ponta, a correção deverá bloquear a mesma avaliação antes de ler o
-gabarito e manter a leitura e a criação do resultado na mesma transação. Não foi
-implementada criação de resultados nem alteração de schema nesta etapa.
+O fluxo de correção também bloqueia a avaliação, lê o gabarito já dentro da
+transação e cria o resultado antes de liberar o bloqueio. Assim, uma alteração
+concorrente do gabarito não pode intercalar leitura e gravação do resultado.
 
 Os testes HTTP locais de avaliações simulam o Prisma e não acessam o banco:
 
@@ -100,3 +95,28 @@ node --test tests/avaliacao.test.mjs tests/avaliacao.consulta-atualizacao.test.m
 Esses testes verificam validações, respostas HTTP e a ordem das operações na
 transação; não comprovam bloqueios reais do PostgreSQL. O teste de concorrência
 no banco fica pendente até existir um banco isolado confirmado para testes.
+
+## Correção de folhas (OMR)
+
+`POST /api/fotos/avaliacoes/:id/corrigir` recebe uma folha no campo multipart
+`imagem` (JPEG ou PNG, até 10 MB) e exige `Authorization: Bearer <token>`. O ID
+da avaliação deve ser UUID e pertencer ao professor autenticado. O Multer mantém
+os bytes temporariamente em memória; o Jimp decodifica a imagem e o OpenCV procura
+o contorno da folha, corrige perspectiva, normaliza para A4 e mede a tinta nas
+coordenadas das bolhas. Nenhum arquivo de foto é salvo no servidor.
+
+A leitura reconhece oito dígitos de matrícula e dez respostas. Uma matrícula
+ilegível, folha não localizada, arquivo inválido, aluno inexistente/inativo ou
+avaliação inacessível resulta em erro e não cria resultado. Questão em branco
+conta como zero. Marcação múltipla ou incerta conta como zero e grava o resultado
+com status `REVISAO_PENDENTE`; demais folhas são gravadas como `CORRIGIDO`. A nota
+é proporcional de 0 a 10. Um aluno só pode ter um resultado por avaliação; uma
+segunda correção retorna conflito (409), preservando o resultado existente.
+
+O leitor depende de uma impressão A4 fiel ao modelo de `frontend/src/app/folha/`
+e precisa localizar a borda da folha em um fundo contrastante, inteira e na
+vertical. A leitura de
+bolhas usa limiares iniciais ainda não calibrados com fotos reais; portanto, o
+resultado automático precisa ser validado com amostras antes de uso operacional.
+O endpoint responde 422 quando a folha ou a matrícula não podem ser lidas com
+confiança suficiente.

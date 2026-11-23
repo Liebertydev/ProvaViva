@@ -35,6 +35,18 @@ const buscarPorIdParaAtualizar = async (id, tx) => {
   return tx.avaliacao.findUnique({ where: { id }, select: camposDetalhe });
 };
 
+const buscarPorIdParaCorrigir = async (id, professorId, tx) => {
+  const registros = await tx.$queryRaw`
+    SELECT "id" FROM "Avaliacao" WHERE "id" = ${id} FOR UPDATE
+  `;
+
+  if (registros.length === 0) return null;
+
+  const avaliacao = await tx.avaliacao.findUnique({ where: { id }, select: camposDetalhe });
+  if (!avaliacao || avaliacao.professorId !== professorId) return null;
+  return avaliacao;
+};
+
 const possuiResultados = async (avaliacaoId, tx) => {
   const resultado = await tx.resultado.findFirst({
     where: { avaliacaoId },
@@ -65,6 +77,7 @@ export default {
   buscarPorId,
   executarTransacao,
   buscarPorIdParaAtualizar,
+  buscarPorIdParaCorrigir,
   possuiResultados,
   atualizar,
 };
