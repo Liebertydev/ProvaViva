@@ -41,6 +41,7 @@ model Aluno {
 model Professor {
   id           String    @id @default(uuid())
   nome         String
+  email        String?   @unique
   matricula    String    @unique
   senhaHash    String?
   ativo        Boolean   @default(true)

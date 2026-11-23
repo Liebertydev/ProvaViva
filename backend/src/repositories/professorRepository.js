@@ -4,6 +4,7 @@ import AppError from '../errors/AppError.js';
 const camposPublicos = {
   id: true,
   nome: true,
+  email: true,
   matricula: true,
   ativo: true,
   desativadoEm: true,
@@ -15,9 +16,13 @@ const buscarPorMatricula = (matricula) => {
   return prisma.professor.findUnique({ where: { matricula }, select: camposPublicos });
 };
 
-const buscarCredenciaisPorMatricula = (matricula) => {
+const buscarPorEmail = (email) => {
+  return prisma.professor.findUnique({ where: { email }, select: camposPublicos });
+};
+
+const buscarCredenciaisPorEmail = (email) => {
   return prisma.professor.findUnique({
-    where: { matricula },
+    where: { email },
     select: { ...camposPublicos, senhaHash: true },
   });
 };
@@ -39,17 +44,23 @@ const criar = async (dados) => {
   try {
     return await prisma.$transaction(async (tx) => {
       // Confere novamente a matrícula antes de criar, dentro da transação.
-      const professorExistente = await tx.professor.findUnique({
-        where: { matricula: dados.matricula },
+      const professorExistente = await tx.professor.findFirst({
+        where: {
+          OR: [
+            { matricula: dados.matricula },
+            ...(dados.email ? [{ email: dados.email }] : []),
+          ],
+        },
       });
 
       if (professorExistente) {
-        throw new AppError('Já existe um professor com esta matrícula.', 409);
+        throw new AppError('Já existe um professor com este e-mail ou matrícula.', 409);
       }
 
       return tx.professor.create({
         data: {
           nome: dados.nome,
+          email: dados.email,
           matricula: dados.matricula,
           senhaHash: dados.senhaHash,
         },
@@ -59,7 +70,7 @@ const criar = async (dados) => {
   } catch (error) {
     // A restrição única protege também contra cadastros simultâneos.
     if (error.code === 'P2002') {
-      throw new AppError('Já existe um professor com esta matrícula.', 409);
+      throw new AppError('Já existe um professor com este e-mail ou matrícula.', 409);
     }
 
     throw error;
@@ -68,7 +79,8 @@ const criar = async (dados) => {
 
 export default {
   buscarPorMatricula,
-  buscarCredenciaisPorMatricula,
+  buscarPorEmail,
+  buscarCredenciaisPorEmail,
   buscarPorId,
   listarTodos,
   contar,

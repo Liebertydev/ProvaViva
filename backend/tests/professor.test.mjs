@@ -9,15 +9,16 @@ const id = 'f3d1c9a2-7b6e-4d31-a935-86e47f2cb290';
 const professor = {
   id,
   nome: 'Professor de teste',
+  email: 'professor@example.com',
   matricula: 'PROF-001',
   ativo: true,
   desativadoEm: null,
   createdAt: '2026-01-01T12:00:00.000Z',
   updatedAt: '2026-01-01T12:00:00.000Z',
 };
-const dados = { nome: professor.nome, matricula: professor.matricula, senha: 'senha-prof-123' };
+const dados = { nome: professor.nome, email: professor.email, matricula: professor.matricula, senha: 'senha-prof-123' };
 const camposPublicos = {
-  id: true, nome: true, matricula: true, ativo: true, desativadoEm: true,
+  id: true, nome: true, email: true, matricula: true, ativo: true, desativadoEm: true,
   createdAt: true, updatedAt: true,
 };
 const originais = {
@@ -50,6 +51,7 @@ beforeEach(() => {
   prisma.$transaction = async (callback) => callback({
     professor: {
       findUnique: async () => null,
+      findFirst: async () => null,
       create: async ({ data }) => ({ ...professor, ...data }),
     },
   });
@@ -81,24 +83,30 @@ const cadastrar = (body) => enviar('/api/professores', {
 test('POST cadastra com 201, normaliza dados e armazena hash da senha', async () => {
   const ordem = [];
   prisma.professor.findUnique = async (args) => {
-    assert.deepEqual(args, { where: { matricula: dados.matricula }, select: camposPublicos });
-    ordem.push('consulta-service');
+    if (args.where.matricula) {
+      assert.deepEqual(args, { where: { matricula: dados.matricula }, select: camposPublicos });
+      ordem.push('consulta-service-matricula');
+    } else {
+      assert.deepEqual(args, { where: { email: dados.email }, select: camposPublicos });
+      ordem.push('consulta-service-email');
+    }
     return null;
   };
   prisma.$transaction = async (callback) => {
     ordem.push('transacao');
     return callback({ professor: {
-      findUnique: async (args) => {
-        assert.deepEqual(args, { where: { matricula: dados.matricula } });
+      findFirst: async (args) => {
+        assert.deepEqual(args, { where: { OR: [{ matricula: dados.matricula }, { email: dados.email }] } });
         ordem.push('consulta-transacao');
         return null;
       },
       create: async (args) => {
         assert.deepEqual(args.select, {
-          id: true, nome: true, matricula: true, ativo: true, desativadoEm: true,
+          id: true, nome: true, email: true, matricula: true, ativo: true, desativadoEm: true,
           createdAt: true, updatedAt: true,
         });
         assert.equal(args.data.nome, dados.nome);
+        assert.equal(args.data.email, dados.email);
         assert.equal(args.data.matricula, dados.matricula);
         assert.notEqual(args.data.senhaHash, dados.senha);
         ordem.push('criar');
@@ -109,12 +117,15 @@ test('POST cadastra com 201, normaliza dados e armazena hash da senha', async ()
 
   const response = await cadastrar({
     nome: `  ${dados.nome}  `,
+    email: ` ${dados.email.toUpperCase()} `,
     matricula: ` ${dados.matricula} `,
     senha: dados.senha,
   });
   assert.equal(response.status, 201);
   assert.deepEqual(response.body, professor);
-  assert.deepEqual(ordem, ['consulta-service', 'transacao', 'consulta-transacao', 'criar']);
+  assert.deepEqual(ordem, [
+    'consulta-service-matricula', 'consulta-service-email', 'transacao', 'consulta-transacao', 'criar',
+  ]);
 });
 
 test('POST preserva os zeros iniciais da matrícula', async () => {
@@ -138,7 +149,9 @@ const cadastrosInvalidos = [
   ['situação fornecida pelo cliente', { ...dados, ativo: false }],
   ['data fornecida pelo cliente', { ...dados, createdAt: professor.createdAt }],
   ['turno adicional', { ...dados, turno: 'MANHA' }],
-  ['campo adicional', { ...dados, email: 'teste@example.invalid' }],
+  ['e-mail ausente', { nome: dados.nome, matricula: dados.matricula, senha: dados.senha }],
+  ['e-mail inválido', { ...dados, email: 'email-inválido' }],
+  ['campo adicional', { ...dados, adicional: true }],
   ['objeto vazio', {}],
   ['array', []],
   ['null', null],
@@ -171,19 +184,19 @@ test('POST retorna 409 no service se a matrícula já existir, inclusive para in
   prisma.$transaction = async () => { transacoes++; return professor; };
   const response = await cadastrar(dados);
   assert.equal(response.status, 409);
-  assert.deepEqual(response.body, { mensagem: 'Já existe um professor com esta matrícula.' });
+  assert.deepEqual(response.body, { mensagem: 'Já existe um professor com este e-mail ou matrícula.' });
   assert.equal(transacoes, 0);
 });
 
 test('POST retorna 409 se a matrícula aparecer dentro da transação', async () => {
   let criacoes = 0;
   prisma.$transaction = async (callback) => callback({ professor: {
-    findUnique: async () => professor,
+    findFirst: async () => professor,
     create: async () => { criacoes++; return professor; },
   } });
   const response = await cadastrar(dados);
   assert.equal(response.status, 409);
-  assert.deepEqual(response.body, { mensagem: 'Já existe um professor com esta matrícula.' });
+  assert.deepEqual(response.body, { mensagem: 'Já existe um professor com este e-mail ou matrícula.' });
   assert.equal(criacoes, 0);
 });
 
@@ -197,7 +210,7 @@ test('POST converte P2002 em 409 sem repetir a transação', async () => {
   };
   const response = await cadastrar(dados);
   assert.equal(response.status, 409);
-  assert.deepEqual(response.body, { mensagem: 'Já existe um professor com esta matrícula.' });
+  assert.deepEqual(response.body, { mensagem: 'Já existe um professor com este e-mail ou matrícula.' });
   assert.equal(transacoes, 1);
 });
 

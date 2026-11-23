@@ -18,10 +18,13 @@ class ProfessorService {
   }
 
   async criarProfessor(dados) {
-    const professorExistente = await professorRepository.buscarPorMatricula(dados.matricula);
+    const [professorPorMatricula, professorPorEmail] = await Promise.all([
+      professorRepository.buscarPorMatricula(dados.matricula),
+      dados.email ? professorRepository.buscarPorEmail(dados.email) : null,
+    ]);
 
-    if (professorExistente) {
-      throw new AppError('Já existe um professor com esta matrícula.', 409);
+    if (professorPorMatricula || professorPorEmail) {
+      throw new AppError('Já existe um professor com este e-mail ou matrícula.', 409);
     }
 
     // Falhas inesperadas seguem para o tratamento global de erros.

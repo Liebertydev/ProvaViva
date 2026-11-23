@@ -21,8 +21,8 @@ const buscarProfessorPorId = async (req, res, next) => {
 
 const criarProfessor = async (req, res, next) => {
   try {
-    const { nome, matricula, senha } = req.body;
-    const professor = await professorService.criarProfessor({ nome, matricula, senha });
+    const { nome, email, matricula, senha } = req.body;
+    const professor = await professorService.criarProfessor({ nome, email, matricula, senha });
     return res.status(201).json(professor);
   } catch (error) {
     next(error);
