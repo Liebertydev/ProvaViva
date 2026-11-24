@@ -1,17 +1,32 @@
-<ion-header>
+<ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text=""></ion-back-button>
+    </ion-buttons>
     <ion-title>Fotografar prova</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <main class="captura">
-    <h1>Captura da folha</h1>
-    <p class="mensagem-erro" [hidden]="!mensagemErro" role="alert">{{ mensagemErro }}</p>
+  <main class="captura pv-page-shell">
+    <header class="captura-topo">
+      <p class="pv-eyebrow">Leitura óptica</p>
+      <h1 class="pv-display">Captura da folha</h1>
+      <p class="captura-lead">Enquadre a página inteira, envie e veja a nota calculada.</p>
+    </header>
 
-    <form class="painel" [hidden]="autenticado" (ngSubmit)="entrar()">
+    <p class="mensagem-erro" [hidden]="!mensagemErro" role="alert">
+      <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+      {{ mensagemErro }}
+    </p>
+
+    <form class="pv-panel painel" [hidden]="autenticado" (ngSubmit)="entrar()">
+      <div class="painel-icone" aria-hidden="true">
+        <ion-icon name="person-circle-outline"></ion-icon>
+      </div>
       <h2>Entrar como professor</h2>
-      <p>Use sua conta para carregar as avaliações e salvar o resultado.</p>
+      <p class="painel-texto">Use sua conta para carregar as avaliações e salvar o resultado.</p>
+
       <ion-item>
         <ion-input
           [(ngModel)]="email"
@@ -38,15 +53,25 @@
       </ion-item>
       <ion-button expand="block" type="submit" [disabled]="carregando">
         @if (carregando) {
-        <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
-        Conectando... } @else { Entrar }
+          <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
+          Conectando...
+        } @else {
+          <ion-icon slot="start" name="log-in-outline" aria-hidden="true"></ion-icon>
+          Entrar
+        }
       </ion-button>
     </form>
 
-    <section class="painel" [hidden]="!autenticado">
+    <section class="pv-panel painel" [hidden]="!autenticado">
       <div class="cabecalho-painel">
-        <h2>{{ professorNome ? 'Olá, ' + professorNome : 'Sessão do professor ativa' }}</h2>
-        <ion-button fill="clear" size="small" (click)="sair()">Sair</ion-button>
+        <div>
+          <p class="pv-eyebrow">Sessão ativa</p>
+          <h2>{{ professorNome ? 'Olá, ' + professorNome : 'Professor autenticado' }}</h2>
+        </div>
+        <ion-button fill="clear" size="small" color="medium" (click)="sair()">
+          <ion-icon slot="start" name="log-out-outline" aria-hidden="true"></ion-icon>
+          Sair
+        </ion-button>
       </div>
 
       <ion-item>
@@ -69,13 +94,20 @@
         Nenhuma avaliação cadastrada para esta conta.
       </p>
 
-      <p class="orientacao">
-        Coloque a folha sobre uma superfície escura, mantenha o celular na vertical e enquadre a página inteira.
-      </p>
+      <div class="dica">
+        <ion-icon name="bulb-outline" aria-hidden="true"></ion-icon>
+        <p>
+          Coloque a folha sobre uma superfície escura, mantenha o celular na vertical e
+          enquadre a página inteira.
+        </p>
+      </div>
 
       <div class="moldura-foto" [class.com-foto]="fotoUrl !== null">
         <img [hidden]="fotoUrl === null" [src]="fotoUrl" alt="Pré-visualização da folha fotografada" />
-        <p [hidden]="fotoUrl !== null" class="texto-vazio">A pré-visualização da foto vai aparecer aqui.</p>
+        <div [hidden]="fotoUrl !== null" class="texto-vazio">
+          <ion-icon name="scan-outline" aria-hidden="true"></ion-icon>
+          <p>A pré-visualização da foto vai aparecer aqui.</p>
+        </div>
       </div>
 
       <p class="aviso-envio" [hidden]="fotoUrl === null">
@@ -85,46 +117,91 @@
       <div class="acoes">
         <ion-button expand="block" (click)="tirarFoto()" [disabled]="carregando || enviandoCorrecao">
           @if (carregando) {
-          <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
-          Abrindo câmera... } @else { {{ fotoUrl ? 'Tirar outra foto' : 'Abrir câmera' }} }
+            <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
+            Abrindo câmera...
+          } @else {
+            <ion-icon slot="start" name="camera-outline" aria-hidden="true"></ion-icon>
+            {{ fotoUrl ? 'Tirar outra foto' : 'Abrir câmera' }}
+          }
         </ion-button>
         @if (fotoUrl !== null) {
-        <ion-button
-          expand="block"
-          color="success"
-          [disabled]="enviandoCorrecao || !avaliacaoId"
-          (click)="corrigirFolha()"
-        >
-          @if (enviandoCorrecao) {
-          <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
-          Lendo folha e corrigindo... } @else { Enviar e calcular nota }
-        </ion-button>
-        <ion-button
-          expand="block"
-          fill="outline"
-          color="medium"
-          [disabled]="carregando || enviandoCorrecao"
-          (click)="removerFoto()"
-        >
-          Remover foto
-        </ion-button>
+          <ion-button
+            expand="block"
+            color="success"
+            [disabled]="enviandoCorrecao || !avaliacaoId"
+            (click)="corrigirFolha()"
+          >
+            @if (enviandoCorrecao) {
+              <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
+              Lendo folha e corrigindo...
+            } @else {
+              <ion-icon slot="start" name="checkmark-done-outline" aria-hidden="true"></ion-icon>
+              Enviar e calcular nota
+            }
+          </ion-button>
+          <ion-button
+            expand="block"
+            fill="outline"
+            color="medium"
+            [disabled]="carregando || enviandoCorrecao"
+            (click)="removerFoto()"
+          >
+            <ion-icon slot="start" name="trash-outline" aria-hidden="true"></ion-icon>
+            Remover foto
+          </ion-button>
         }
       </div>
 
       <section class="resultado" [hidden]="resultado === null">
-        <h2>Resultado da correção</h2>
-        <p><strong>Aluno:</strong> {{ resultado?.resultado?.aluno?.nome }}</p>
-        <p><strong>Matrícula:</strong> {{ resultado?.leitura?.matricula }}</p>
-        <p><strong>Avaliação:</strong> {{ resultado?.resultado?.avaliacao?.titulo }}</p>
-        <p class="nota">{{ resultado?.resultado?.nota?.toFixed(2) }} / 10</p>
-        <p><strong>Acertos:</strong> {{ resultado?.resultado?.acertos }} de 10</p>
-        <p><strong>Respostas lidas:</strong> {{ respostasLidas }}</p>
-        <p [hidden]="!questoesRevisao"><strong>Questões para revisar:</strong> {{ questoesRevisao }}</p>
-        <p class="status-resultado">
-          {{ resultado?.resultado?.status === 'REVISAO_PENDENTE' ? 'A leitura precisa de revisão manual.' : 'Folha
-          corrigida.' }}
+        <p class="pv-eyebrow">Resultado</p>
+        <h2>Correção concluída</h2>
+
+        <div class="nota-destaque">
+          <span class="nota-valor">{{ resultado?.resultado?.nota?.toFixed(2) }}</span>
+          <span class="nota-escala">/ 10</span>
+        </div>
+
+        <dl class="resultado-grid">
+          <div>
+            <dt>Aluno</dt>
+            <dd>{{ resultado?.resultado?.aluno?.nome }}</dd>
+          </div>
+          <div>
+            <dt>Matrícula</dt>
+            <dd>{{ resultado?.leitura?.matricula }}</dd>
+          </div>
+          <div>
+            <dt>Avaliação</dt>
+            <dd>{{ resultado?.resultado?.avaliacao?.titulo }}</dd>
+          </div>
+          <div>
+            <dt>Acertos</dt>
+            <dd>{{ resultado?.resultado?.acertos }} de 10</dd>
+          </div>
+          <div class="span-2">
+            <dt>Respostas lidas</dt>
+            <dd>{{ respostasLidas }}</dd>
+          </div>
+          <div class="span-2" [hidden]="!questoesRevisao">
+            <dt>Questões para revisar</dt>
+            <dd>{{ questoesRevisao }}</dd>
+          </div>
+        </dl>
+
+        <p
+          class="status-resultado"
+          [class.status-revisao]="resultado?.resultado?.status === 'REVISAO_PENDENTE'"
+        >
+          {{
+            resultado?.resultado?.status === 'REVISAO_PENDENTE'
+              ? 'A leitura precisa de revisão manual.'
+              : 'Folha corrigida com sucesso.'
+          }}
         </p>
-        <ion-button expand="block" fill="outline" (click)="novaCorrecao()">Fazer outra correção</ion-button>
+        <ion-button expand="block" fill="outline" (click)="novaCorrecao()">
+          <ion-icon slot="start" name="refresh-outline" aria-hidden="true"></ion-icon>
+          Fazer outra correção
+        </ion-button>
       </section>
     </section>
   </main>

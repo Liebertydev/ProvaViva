@@ -1,13 +1,68 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Prova Viva</ion-title>
+    <ion-title></ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div id="container">
-    <strong>Correção de provas</strong>
-    <p>Fotografe uma folha de respostas para começar.</p>
-    <ion-button routerLink="/camera">Abrir câmera</ion-button>
-  </div>
+  <section class="home-hero">
+    <div class="home-orb home-orb--a" aria-hidden="true"></div>
+    <div class="home-orb home-orb--b" aria-hidden="true"></div>
+
+    <p class="pv-eyebrow home-rise">Correção automática</p>
+    <h1 class="pv-display brand home-rise home-rise--delay-1">ProvaViva</h1>
+    <p class="home-lead home-rise home-rise--delay-2">
+      Fotografe a folha de respostas e receba a nota com leitura óptica de marcações.
+    </p>
+
+    <div class="home-actions home-rise home-rise--delay-3">
+      <ion-button routerLink="/camera" size="large">
+        <ion-icon slot="start" name="camera-outline" aria-hidden="true"></ion-icon>
+        Abrir câmera
+      </ion-button>
+      <ion-button routerLink="/folha" fill="solid" class="home-secondary">
+        <ion-icon slot="start" name="document-text-outline" aria-hidden="true"></ion-icon>
+        Ver modelo da folha
+      </ion-button>
+    </div>
+
+    <div class="home-visual home-rise home-rise--delay-4" aria-hidden="true">
+      <div class="scan-stage">
+        <div class="scan-glow"></div>
+        <div class="sheet-mock">
+          <span class="marker marker-tl"></span>
+          <span class="marker marker-tr"></span>
+          <span class="marker marker-bl"></span>
+          <span class="marker marker-br"></span>
+
+          <div class="sheet-head">
+            <span class="sheet-brand">ProvaViva</span>
+            <span class="sheet-chip">OMR</span>
+          </div>
+
+          <div class="sheet-meta">
+            <span></span>
+            <span></span>
+          </div>
+
+          <div class="sheet-grid">
+            <div class="sheet-letters">
+              <b></b><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
+            </div>
+            <div class="sheet-row"><b>1</b><i class="filled"></i><i></i><i></i><i></i><i></i></div>
+            <div class="sheet-row"><b>2</b><i></i><i></i><i class="filled"></i><i></i><i></i></div>
+            <div class="sheet-row"><b>3</b><i></i><i class="filled"></i><i></i><i></i><i></i></div>
+            <div class="sheet-row"><b>4</b><i></i><i></i><i></i><i class="filled"></i><i></i></div>
+            <div class="sheet-row"><b>5</b><i class="filled"></i><i></i><i></i><i></i><i></i></div>
+          </div>
+
+          <div class="scan-beam"></div>
+          <div class="sheet-score">
+            <small>Nota</small>
+            <strong>8,0</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </ion-content>

@@ -3,10 +3,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import {
+  IonBackButton,
+  IonButtons,
   IonContent,
   IonHeader,
   IonTitle,
-  IonToolbar
+  IonToolbar,
 } from '@ionic/angular';
 
 import { modelo } from './modelo-config';
@@ -18,11 +20,13 @@ import { modelo } from './modelo-config';
   standalone: true,
   imports: [
     CommonModule,
+    IonBackButton,
+    IonButtons,
     IonContent,
     IonHeader,
     IonTitle,
-    IonToolbar
-  ]
+    IonToolbar,
+  ],
 })
 export class FolhaPage implements OnInit {
 

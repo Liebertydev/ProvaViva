@@ -1,20 +1,27 @@
-
-<ion-header>
+<ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text=""></ion-back-button>
+    </ion-buttons>
     <ion-title>Folha de respostas</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
+  <div class="folha-page">
+  <header class="folha-topo">
+    <p class="pv-eyebrow">Pré-visualização</p>
+    <h2 class="titulo-preview pv-display">Modelo da folha — ProvaViva</h2>
+  </header>
 
-  <h2 class="titulo-preview">Modelo da folha — ProvaViva</h2>
-
+  <div class="folha-frame">
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="210mm"
-    height="297mm"
     viewBox="0 0 210 297"
-    class="folha-a4">
+    preserveAspectRatio="xMidYMin meet"
+    class="folha-a4"
+    role="img"
+    aria-label="Modelo A4 da folha de respostas ProvaViva">
 
     <!-- Fundo branco da folha -->
     <rect
@@ -162,5 +169,7 @@
     }
 
   </svg>
+  </div>
+  </div>
 
 </ion-content>

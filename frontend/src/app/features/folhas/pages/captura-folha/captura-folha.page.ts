@@ -2,9 +2,12 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angula
 import { FormsModule } from '@angular/forms';
 import { CameraErrorCode } from '@capacitor/camera';
 import {
+  IonBackButton,
   IonButton,
+  IonButtons,
   IonContent,
   IonHeader,
+  IonIcon,
   IonInput,
   IonItem,
   IonSelect,
@@ -13,6 +16,19 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import {
+  alertCircleOutline,
+  bulbOutline,
+  cameraOutline,
+  checkmarkDoneOutline,
+  logInOutline,
+  logOutOutline,
+  personCircleOutline,
+  refreshOutline,
+  scanOutline,
+  trashOutline,
+} from 'ionicons/icons';
 
 import {
   ProvaVivaApiService,
@@ -30,9 +46,12 @@ import { CameraService } from '../../services/camera.service';
   imports: [
     AppRepeatDirective,
     FormsModule,
+    IonBackButton,
     IonButton,
+    IonButtons,
     IonContent,
     IonHeader,
+    IonIcon,
     IonInput,
     IonItem,
     IonSelect,
@@ -62,6 +81,21 @@ export class CapturaFolhaPage implements OnInit, OnDestroy {
   enviandoCorrecao = false;
   formatoFoto: 'jpeg' | 'png' = 'jpeg';
   mensagemErro = '';
+
+  constructor() {
+    addIcons({
+      alertCircleOutline,
+      bulbOutline,
+      cameraOutline,
+      checkmarkDoneOutline,
+      logInOutline,
+      logOutOutline,
+      personCircleOutline,
+      refreshOutline,
+      scanOutline,
+      trashOutline,
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     try {

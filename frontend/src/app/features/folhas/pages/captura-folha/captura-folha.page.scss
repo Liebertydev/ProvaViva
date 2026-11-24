@@ -1,54 +1,103 @@
-.captura {
-  width: min(100%, 620px);
-  margin: 0 auto;
+.captura-topo {
+  margin-bottom: 20px;
+  animation: pv-rise 0.55s ease both;
 }
 
-h1 {
-  margin: 8px 0;
-  font-size: 1.5rem;
+.captura-topo .pv-display {
+  font-size: clamp(1.8rem, 5vw, 2.35rem);
 }
 
-.orientacao,
-.aviso-envio {
-  color: var(--ion-color-medium-shade);
+.captura-lead {
+  max-width: 36ch;
+  margin: 10px 0 0;
+  color: color-mix(in srgb, var(--pv-ink) 68%, transparent);
   line-height: 1.5;
 }
 
 .painel {
-  padding: 16px;
-  border-radius: 16px;
-  background: var(--ion-card-background, var(--ion-color-step-50));
+  animation: pv-rise 0.65s ease both;
+  animation-delay: 0.08s;
 }
 
 .painel h2 {
-  margin-top: 0;
-  font-size: 1.15rem;
+  margin: 0 0 6px;
+  font-family: var(--pv-font-display);
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.painel-texto,
+.orientacao,
+.aviso-envio {
+  color: color-mix(in srgb, var(--pv-ink) 65%, transparent);
+  line-height: 1.5;
+}
+
+.painel-icone {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ion-color-primary) 14%, transparent);
+  color: var(--ion-color-primary);
+  font-size: 1.6rem;
 }
 
 .cabecalho-painel {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .cabecalho-painel h2 {
-  margin-bottom: 8px;
+  margin-bottom: 0;
+}
+
+.dica {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 14px 0 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ion-color-tertiary) 12%, transparent);
+  color: color-mix(in srgb, var(--pv-ink) 80%, transparent);
+}
+
+.dica ion-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ion-color-tertiary);
+  font-size: 1.25rem;
+}
+
+.dica p {
+  margin: 0;
+  line-height: 1.45;
+  font-size: 0.92rem;
 }
 
 .moldura-foto {
   display: grid;
   min-height: 300px;
-  margin: 20px 0 12px;
+  margin: 18px 0 12px;
   overflow: hidden;
   place-items: center;
-  border: 2px dashed var(--ion-color-medium);
-  border-radius: 16px;
-  background: var(--ion-color-light);
+  border: 1.5px dashed color-mix(in srgb, var(--ion-color-primary) 45%, transparent);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ion-color-primary) 6%, transparent), transparent),
+    var(--ion-color-light);
 }
 
 .moldura-foto.com-foto {
   border-style: solid;
-  background: #171717;
+  border-color: color-mix(in srgb, var(--pv-ink) 55%, transparent);
+  background: #101820;
 }
 
 .moldura-foto img {
@@ -59,13 +108,39 @@ h1 {
 }
 
 .texto-vazio {
-  padding: 20px;
-  color: var(--ion-color-medium-shade);
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  padding: 28px 20px;
+  color: color-mix(in srgb, var(--pv-ink) 55%, transparent);
   text-align: center;
 }
 
+.texto-vazio ion-icon {
+  font-size: 2rem;
+  color: var(--ion-color-primary);
+}
+
+.texto-vazio p {
+  margin: 0;
+}
+
 .mensagem-erro {
-  color: var(--ion-color-danger);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ion-color-danger) 12%, transparent);
+  color: var(--ion-color-danger-shade);
+  animation: pv-fade 0.3s ease both;
+}
+
+.mensagem-erro ion-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 1.15rem;
 }
 
 .acoes {
@@ -76,22 +151,86 @@ h1 {
 
 .resultado {
   margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--ion-color-step-200);
+  padding-top: 20px;
+  border-top: 1px solid var(--pv-border);
+  animation: pv-rise 0.55s ease both;
 }
 
-.nota {
-  color: var(--ion-color-primary-shade);
-  font-size: 2rem;
+.nota-destaque {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 10px 0 18px;
+}
+
+.nota-valor {
+  color: var(--ion-color-primary);
+  font-family: var(--pv-font-display);
+  font-size: clamp(2.4rem, 8vw, 3.2rem);
   font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.nota-escala {
+  color: color-mix(in srgb, var(--pv-ink) 55%, transparent);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.resultado-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.resultado-grid .span-2 {
+  grid-column: 1 / -1;
+}
+
+.resultado-grid dt {
+  margin-bottom: 2px;
+  color: color-mix(in srgb, var(--pv-ink) 55%, transparent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.resultado-grid dd {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .status-resultado {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ion-color-success) 14%, transparent);
+  color: var(--ion-color-success-shade);
   font-weight: 600;
+}
+
+.status-resultado.status-revisao {
+  background: color-mix(in srgb, var(--ion-color-warning) 16%, transparent);
+  color: var(--ion-color-warning-shade);
 }
 
 ion-spinner {
   width: 18px;
   height: 18px;
   margin-right: 8px;
+}
+
+@media (max-width: 420px) {
+  .resultado-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .resultado-grid .span-2 {
+    grid-column: auto;
+  }
 }

@@ -36,6 +36,115 @@
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
 
+html,
+body {
+  font-family: var(--pv-font-body);
+  background:
+    radial-gradient(ellipse 80% 55% at 12% -10%, rgba(15, 118, 110, 0.18), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(26, 58, 69, 0.12), transparent 50%),
+    linear-gradient(165deg, var(--pv-paper) 0%, var(--pv-fog) 100%);
+  background-attachment: fixed;
+  color: var(--pv-ink);
+}
+
+ion-content {
+  --background: transparent;
+}
+
+ion-toolbar {
+  --background: transparent;
+  --border-width: 0;
+  --min-height: 56px;
+}
+
+ion-title {
+  font-family: var(--pv-font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+ion-button {
+  --border-radius: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+ion-item {
+  --border-radius: 14px;
+  --inner-padding-end: 12px;
+  --padding-start: 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--pv-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.pv-page-shell {
+  width: min(100%, 640px);
+  margin: 0 auto;
+  padding-bottom: 32px;
+}
+
+.pv-panel {
+  padding: 20px;
+  border: 1px solid var(--pv-border);
+  border-radius: var(--pv-radius);
+  background: var(--pv-surface);
+  box-shadow: var(--pv-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.pv-eyebrow {
+  margin: 0 0 8px;
+  color: var(--ion-color-primary-shade);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pv-display {
+  margin: 0;
+  font-family: var(--pv-font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+@keyframes pv-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pv-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pv-pulse-soft {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
 
 @media print {
   @page {
@@ -44,7 +153,7 @@
   }
 
   app-folha ion-header,
-  app-folha .titulo-preview {
+  app-folha .folha-topo {
     display: none !important;
   }
 

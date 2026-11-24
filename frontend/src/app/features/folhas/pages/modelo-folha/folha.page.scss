@@ -1,8 +1,59 @@
+.folha-page {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+
+.folha-topo {
+  margin: 0 0 16px;
+  animation: pv-rise 0.55s ease both;
+}
+
+.titulo-preview {
+  margin: 0;
+  font-size: clamp(1.25rem, 5vw, 1.85rem);
+  line-height: 1.2;
+}
+
+.folha-frame {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--pv-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--pv-shadow);
+}
+
 .folha-a4 {
   display: block;
-  width: 210mm;
-  height: 297mm;
-  max-width: none;
-  margin-inline: auto;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  aspect-ratio: 210 / 297;
+  margin: 0;
   font-family: Arial, sans-serif;
+  animation: pv-rise 0.65s ease both;
+  animation-delay: 0.08s;
+}
+
+@media print {
+  .folha-page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .folha-frame {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .folha-a4 {
+    width: 210mm;
+    height: 297mm;
+    max-width: none;
+    aspect-ratio: auto;
+  }
 }
