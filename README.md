@@ -6,7 +6,7 @@ por reconhecimento óptico de marcações (OMR).
 ## Tecnologias previstas
 
 - Ionic + Angular
-- Node.js + Express + TypeScript
+- Node.js + Express + JavaScript (ES Modules)
 - OpenCV
 - PostgreSQL hospedado
 
@@ -14,3 +14,111 @@ por reconhecimento óptico de marcações (OMR).
 
 Reconhecer matrícula e respostas de uma folha A4
 padronizada, calcular a nota e apresentar os resultados.
+
+## Executar o backend
+
+O backend foi refatorado de TypeScript para JavaScript. A arquitetura em
+camadas, o Prisma ORM 7 e as validações do cadastro de aluno foram preservados.
+O frontend continua em Ionic/Angular com TypeScript.
+
+Dentro de `backend/`, configure `DATABASE_URL` e `DIRECT_URL` no `.env`,
+mantendo esse arquivo fora do Git. Os comandos são:
+
+```sh
+npm ci
+npm run build
+npm run dev
+```
+
+`npm run build` gera o Prisma Client em JavaScript. A aplicação executa
+diretamente os arquivos de `src/`, sem compilação TypeScript e sem usar `dist/`.
+Para executar sem o modo de observação, use `npm start`.
+
+O generator `prisma-client-js` gera JavaScript diretamente e é suportado no
+Prisma 7. Ele está marcado como deprecated na
+[documentação do Prisma](https://www.prisma.io/docs/orm/v7/prisma-schema/overview/generators#prisma-client-js-deprecated);
+essa escolha deve ser reavaliada antes de uma atualização de versão principal.
+
+`npm test` executa os testes de integração no banco configurado, incluindo
+cadastro e duplicidade concorrente. Os registros temporários são identificados
+por execução e removidos pelo próprio teste.
+
+### Login de professor
+
+Configure também `JWT_SECRET` com um segredo aleatório de pelo menos 32 bytes.
+O cadastro de professor é `POST /api/auth/cadastro`, com `nome`, `email`,
+`matricula` e `senha`. O login é `POST /api/auth/login`, com `email` e `senha`;
+a resposta contém um JWT Bearer válido por uma hora. O e-mail deve ser único.
+O cadastro antigo `POST /api/professores` também exige autenticação depois que
+existir o primeiro professor.
+As rotas de alunos, professores, avaliações e consultas de avaliações exigem
+`Authorization: Bearer <token>`. A senha é armazenada como hash scrypt; o hash
+nunca é incluído nas respostas.
+
+Professores existentes antes das migrações ficam sem senha e sem e-mail até que
+esses dados sejam provisionados. As migrações
+`20261122235000_professor_password` e `20261123000100_professor_email` precisam
+ser aplicadas antes de usar o cadastro/login.
+
+## Módulo de avaliações
+
+O router de avaliações contém POST `/api/avaliacoes`, GET `/api/avaliacoes`,
+GET `/api/avaliacoes/:id` e PATCH `/api/avaliacoes/:id`, e está registrado em
+`app.js` atrás da autenticação JWT. As operações usam o professor autenticado
+para limitar as avaliações que podem ser listadas, consultadas ou alteradas.
+
+A listagem retorna os dados básicos da avaliação, datas e identificação básica do
+professor (id, nome e matrícula). A consulta por ID inclui também o gabarito.
+O PATCH aceita somente título e/ou gabarito de dez alternativas A–E. Quando já
+existem resultados, uma mudança real no gabarito retorna 409; o título ainda pode
+ser alterado. Reenviar valores idênticos não executa uma atualização no banco.
+
+A atualização usa uma transação Prisma `ReadCommitted` com `SELECT ... FOR UPDATE`
+parametrizado na avaliação, antes de ler o gabarito e verificar a existência de
+resultados. A verificação e a escrita usam a mesma transação. O bloqueio dura até
+o término da transação e serializa as edições da mesma avaliação, conforme os
+[bloqueios de linha do PostgreSQL](https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS).
+Não há tentativas automáticas de repetição; erros inesperados seguem para o
+tratamento global, que retorna 500 sem detalhes internos.
+
+O fluxo de correção também bloqueia a avaliação, lê o gabarito já dentro da
+transação e cria o resultado antes de liberar o bloqueio. Assim, uma alteração
+concorrente do gabarito não pode intercalar leitura e gravação do resultado.
+
+Os testes HTTP locais de avaliações simulam o Prisma e não acessam o banco:
+
+```sh
+cd backend
+node --test tests/avaliacao.test.mjs tests/avaliacao.consulta-atualizacao.test.mjs
+```
+
+Esses testes verificam validações, respostas HTTP e a ordem das operações na
+transação; não comprovam bloqueios reais do PostgreSQL. O teste de concorrência
+no banco fica pendente até existir um banco isolado confirmado para testes.
+
+## Correção de folhas (OMR)
+
+`POST /api/fotos/avaliacoes/:id/corrigir` recebe uma folha no campo multipart
+`imagem` (JPEG ou PNG, até 10 MB) e exige `Authorization: Bearer <token>`. O ID
+da avaliação deve ser UUID e pertencer ao professor autenticado. O Multer mantém
+os bytes temporariamente em memória; o Jimp decodifica a imagem e o OpenCV procura
+o contorno da folha, corrige perspectiva, normaliza para A4 e mede a tinta nas
+coordenadas das bolhas. Nenhum arquivo de foto é salvo no servidor.
+
+A leitura reconhece oito dígitos de matrícula e dez respostas. Uma matrícula
+ilegível, folha não localizada, arquivo inválido, aluno inexistente/inativo ou
+avaliação inacessível resulta em erro e não cria resultado. Questão em branco
+conta como zero. Marcação múltipla ou incerta conta como zero e grava o resultado
+com status `REVISAO_PENDENTE`; demais folhas são gravadas como `CORRIGIDO`. A nota
+é proporcional de 0 a 10. Um aluno só pode ter um resultado por avaliação; uma
+segunda correção retorna conflito (409), preservando o resultado existente.
+
+O modelo atual em `frontend/src/app/features/folhas/pages/modelo-folha/`
+inclui quatro quadrados pretos de referência nos cantos. Imprima a rota `/folha`
+em A4, em tamanho real, e mantenha os quatro quadrados visíveis; o leitor usa
+seus centros para corrigir a perspectiva. Folhas sem esses marcadores ainda
+dependem da detecção do contorno externo. A leitura de bolhas usa limiares
+iniciais ainda não calibrados com fotos reais; portanto, o resultado automático
+precisa ser validado com amostras antes de uso operacional.
+O endpoint responde 422 quando a folha ou a matrícula não podem ser lidas com
+confiança suficiente.

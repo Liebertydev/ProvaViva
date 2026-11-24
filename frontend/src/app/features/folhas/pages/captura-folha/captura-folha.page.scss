@@ -1,0 +1,97 @@
+.captura {
+  width: min(100%, 620px);
+  margin: 0 auto;
+}
+
+h1 {
+  margin: 8px 0;
+  font-size: 1.5rem;
+}
+
+.orientacao,
+.aviso-envio {
+  color: var(--ion-color-medium-shade);
+  line-height: 1.5;
+}
+
+.painel {
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--ion-card-background, var(--ion-color-step-50));
+}
+
+.painel h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+
+.cabecalho-painel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cabecalho-painel h2 {
+  margin-bottom: 8px;
+}
+
+.moldura-foto {
+  display: grid;
+  min-height: 300px;
+  margin: 20px 0 12px;
+  overflow: hidden;
+  place-items: center;
+  border: 2px dashed var(--ion-color-medium);
+  border-radius: 16px;
+  background: var(--ion-color-light);
+}
+
+.moldura-foto.com-foto {
+  border-style: solid;
+  background: #171717;
+}
+
+.moldura-foto img {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+.texto-vazio {
+  padding: 20px;
+  color: var(--ion-color-medium-shade);
+  text-align: center;
+}
+
+.mensagem-erro {
+  color: var(--ion-color-danger);
+}
+
+.acoes {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.resultado {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ion-color-step-200);
+}
+
+.nota {
+  color: var(--ion-color-primary-shade);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.status-resultado {
+  font-weight: 600;
+}
+
+ion-spinner {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}

@@ -25,6 +25,17 @@
       fill="white"
     />
 
+    <g class="marcadores-folha" fill="black">
+      @for (marcador of modelo.marcadores.posicoes; track $index) {
+        <rect
+          [attr.x]="marcador.x"
+          [attr.y]="marcador.y"
+          [attr.width]="modelo.marcadores.tamanhoMm"
+          [attr.height]="modelo.marcadores.tamanhoMm"
+        />
+      }
+    </g>
+
     <!-- Cabeçalho institucional: todas as coordenadas do SVG estão em mm. -->
     <g class="cabecalho-folha" fill="black">
       <rect x="15" y="15" width="180" height="45"

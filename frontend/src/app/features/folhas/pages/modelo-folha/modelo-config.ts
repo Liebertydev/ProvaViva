@@ -11,6 +11,10 @@ export interface ConfiguracaoGrade {
 export interface ConfiguracaoFolha {
   largura: number;
   altura: number;
+  marcadores: {
+    tamanhoMm: number;
+    posicoes: { x: number; y: number }[];
+  };
   matricula: ConfiguracaoGrade;
   respostas: ConfiguracaoGrade;
 }
@@ -18,6 +22,15 @@ export interface ConfiguracaoFolha {
 export const modelo: ConfiguracaoFolha = {
   largura: 210,
   altura: 297,
+  marcadores: {
+    tamanhoMm: 8,
+    posicoes: [
+      { x: 5, y: 5 },
+      { x: 197, y: 5 },
+      { x: 197, y: 284 },
+      { x: 5, y: 284 },
+    ],
+  },
 
   matricula: {
     // Centralização do conjunto: dígitos à esquerda e oito colunas de bolinhas.
