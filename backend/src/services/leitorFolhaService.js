@@ -33,6 +33,103 @@ const distancia = (primeiro, segundo) => Math.hypot(
   segundo.y - primeiro.y,
 );
 
+const localizarMarcadoresDaFolha = (cv, imagem) => {
+  const cinza = new cv.Mat();
+  const suavizada = new cv.Mat();
+  const binaria = new cv.Mat();
+  const contornos = new cv.MatVector();
+  const hierarquia = new cv.Mat();
+  const candidatos = [];
+  const areaImagem = imagem.rows * imagem.cols;
+  const menorDimensao = Math.min(imagem.rows, imagem.cols);
+  const ladoMinimo = Math.max(8, menorDimensao * 0.008);
+  const ladoMaximo = menorDimensao * 0.12;
+  let tamanhoBloco = Math.max(31, Math.round(menorDimensao * 0.035));
+  if (tamanhoBloco % 2 === 0) tamanhoBloco += 1;
+
+  try {
+    cv.cvtColor(imagem, cinza, cv.COLOR_RGBA2GRAY);
+    cv.GaussianBlur(cinza, suavizada, new cv.Size(3, 3), 0);
+    cv.adaptiveThreshold(
+      suavizada,
+      binaria,
+      255,
+      cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+      cv.THRESH_BINARY_INV,
+      tamanhoBloco,
+      10,
+    );
+    cv.findContours(binaria, contornos, hierarquia, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+    for (let indice = 0; indice < contornos.size(); indice += 1) {
+      const contorno = contornos.get(indice);
+      const aproximado = new cv.Mat();
+
+      try {
+        const limites = cv.boundingRect(contorno);
+        const ladoMaior = Math.max(limites.width, limites.height);
+        const ladoMenor = Math.min(limites.width, limites.height);
+        const proporcao = ladoMenor / ladoMaior;
+        const area = Math.abs(cv.contourArea(contorno));
+        const preenchimento = area / (limites.width * limites.height);
+
+        if (
+          ladoMenor < ladoMinimo ||
+          ladoMaior > ladoMaximo ||
+          proporcao < 0.65 ||
+          preenchimento < 0.65 ||
+          area < areaImagem * 0.00005 ||
+          area > areaImagem * 0.02
+        ) {
+          continue;
+        }
+
+        cv.approxPolyDP(contorno, aproximado, cv.arcLength(contorno, true) * 0.02, true);
+        if (aproximado.rows !== 4) continue;
+
+        candidatos.push({
+          x: limites.x + limites.width / 2,
+          y: limites.y + limites.height / 2,
+          tamanho: (limites.width + limites.height) / 2,
+        });
+      } finally {
+        contorno.delete();
+        aproximado.delete();
+      }
+    }
+  } finally {
+    cinza.delete();
+    suavizada.delete();
+    binaria.delete();
+    contornos.delete();
+    hierarquia.delete();
+  }
+
+  if (candidatos.length < 4) return null;
+
+  const extremos = [
+    candidatos.reduce((melhor, ponto) => ponto.x + ponto.y < melhor.x + melhor.y ? ponto : melhor),
+    candidatos.reduce((melhor, ponto) => ponto.x - ponto.y > melhor.x - melhor.y ? ponto : melhor),
+    candidatos.reduce((melhor, ponto) => ponto.x + ponto.y > melhor.x + melhor.y ? ponto : melhor),
+    candidatos.reduce((melhor, ponto) => ponto.y - ponto.x > melhor.y - melhor.x ? ponto : melhor),
+  ];
+
+  if (new Set(extremos).size !== 4) return null;
+
+  const menorMarcador = Math.min(...extremos.map((ponto) => ponto.tamanho));
+  const maiorMarcador = Math.max(...extremos.map((ponto) => ponto.tamanho));
+  if (maiorMarcador / menorMarcador > 3.5) return null;
+
+  const areaQuadrilatero = Math.abs(extremos.reduce((area, ponto, indice) => {
+    const proximo = extremos[(indice + 1) % extremos.length];
+    return area + ponto.x * proximo.y - proximo.x * ponto.y;
+  }, 0)) / 2;
+
+  if (areaQuadrilatero < areaImagem * 0.15 || areaQuadrilatero > areaImagem * 0.98) return null;
+
+  return extremos;
+};
+
 const localizarCantosDaFolha = (cv, imagem) => {
   const cinza = new cv.Mat();
   const suavizada = new cv.Mat();
@@ -88,9 +185,33 @@ const localizarCantosDaFolha = (cv, imagem) => {
   return melhorQuadrilatero;
 };
 
-const corrigirPerspectiva = (cv, imagem, cantos) => {
-  const larguraFolha = (distancia(cantos[0], cantos[1]) + distancia(cantos[2], cantos[3])) / 2;
-  const alturaFolha = (distancia(cantos[1], cantos[2]) + distancia(cantos[3], cantos[0])) / 2;
+const localizarReferenciasDaFolha = (cv, imagem) => {
+  const marcadores = localizarMarcadoresDaFolha(cv, imagem);
+  if (marcadores) {
+    const metadeMarcador = modeloFolha.marcadores.tamanhoMm / 2;
+    const destino = modeloFolha.marcadores.posicoes.map((posicao) => ({
+      x: (posicao.x + metadeMarcador) * pixelsPorMm,
+      y: (posicao.y + metadeMarcador) * pixelsPorMm,
+    }));
+
+    return { origem: marcadores, destino };
+  }
+
+  return {
+    origem: localizarCantosDaFolha(cv, imagem),
+    destino: [
+      { x: 0, y: 0 },
+      { x: larguraNormalizada - 1, y: 0 },
+      { x: larguraNormalizada - 1, y: alturaNormalizada - 1 },
+      { x: 0, y: alturaNormalizada - 1 },
+    ],
+  };
+};
+
+const corrigirPerspectiva = (cv, imagem, referencias) => {
+  const pontos = referencias.origem;
+  const larguraFolha = (distancia(pontos[0], pontos[1]) + distancia(pontos[2], pontos[3])) / 2;
+  const alturaFolha = (distancia(pontos[1], pontos[2]) + distancia(pontos[3], pontos[0])) / 2;
 
   if (larguraFolha >= alturaFolha) {
     throw new AppError('A folha precisa aparecer na vertical e com a página inteira visível.', 422);
@@ -100,14 +221,14 @@ const corrigirPerspectiva = (cv, imagem, cantos) => {
     4,
     1,
     cv.CV_32FC2,
-    cantos.flatMap((ponto) => [ponto.x, ponto.y]),
+    pontos.flatMap((ponto) => [ponto.x, ponto.y]),
   );
-  const destino = cv.matFromArray(4, 1, cv.CV_32FC2, [
-    0, 0,
-    larguraNormalizada - 1, 0,
-    larguraNormalizada - 1, alturaNormalizada - 1,
-    0, alturaNormalizada - 1,
-  ]);
+  const destino = cv.matFromArray(
+    4,
+    1,
+    cv.CV_32FC2,
+    referencias.destino.flatMap((ponto) => [ponto.x, ponto.y]),
+  );
   const transformacao = cv.getPerspectiveTransform(origem, destino);
   const retificada = new cv.Mat();
 
@@ -155,11 +276,11 @@ const medirTinta = (matrizBinaria, xMm, yMm, raioMm) => {
   return total === 0 ? 0 : pixelsEscuros / total;
 };
 
-const classificarBolhas = (matrizBinaria, grade, rotulos, posicao) => {
+const classificarBolhas = (matrizBinaria, grade, rotulos, posicao, orientacao = 'horizontal') => {
   const escores = rotulos.map((_, indice) => medirTinta(
     matrizBinaria,
-    grade.xInicial + indice * grade.distanciaX,
-    grade.yInicial + posicao * grade.distanciaY,
+    grade.xInicial + (orientacao === 'horizontal' ? indice : posicao) * grade.distanciaX,
+    grade.yInicial + (orientacao === 'horizontal' ? posicao : indice) * grade.distanciaY,
     grade.raio,
   ));
   const marcadas = escores
@@ -183,7 +304,7 @@ const classificarBolhas = (matrizBinaria, grade, rotulos, posicao) => {
 const lerMatricula = (binaria) => {
   const digitos = Array.from({ length: modeloFolha.matricula.linhas }, (_, indice) => String(indice));
   const colunas = Array.from({ length: modeloFolha.matricula.colunas }, (_, indice) => {
-    const leitura = classificarBolhas(binaria, modeloFolha.matricula, digitos, indice);
+    const leitura = classificarBolhas(binaria, modeloFolha.matricula, digitos, indice, 'vertical');
     if (leitura.estado !== 'MARCADA') {
       throw new AppError(`Não consegui ler a coluna ${indice + 1} da matrícula (${leitura.estado.toLowerCase()}).`, 422);
     }
@@ -250,8 +371,8 @@ const lerFolha = async (buffer) => {
   let binaria;
 
   try {
-    const cantos = localizarCantosDaFolha(cv, imagem);
-    retificada = corrigirPerspectiva(cv, imagem, cantos);
+    const referencias = localizarReferenciasDaFolha(cv, imagem);
+    retificada = corrigirPerspectiva(cv, imagem, referencias);
     cinza = new cv.Mat();
     binaria = new cv.Mat();
     cv.cvtColor(retificada, cinza, cv.COLOR_RGBA2GRAY);
@@ -262,7 +383,7 @@ const lerFolha = async (buffer) => {
       cv.ADAPTIVE_THRESH_GAUSSIAN_C,
       cv.THRESH_BINARY_INV,
       31,
-      10,
+      1,
     );
     binaria = corrigirOrientacaoDeCabecaParaBaixo(cv, binaria);
 

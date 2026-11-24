@@ -1,6 +1,15 @@
 const modeloFolha = {
   larguraMm: 210,
   alturaMm: 297,
+  marcadores: {
+    tamanhoMm: 8,
+    posicoes: [
+      { x: 5, y: 5 },
+      { x: 197, y: 5 },
+      { x: 197, y: 284 },
+      { x: 5, y: 284 },
+    ],
+  },
   matricula: {
     xInicial: 75.27,
     yInicial: 94,

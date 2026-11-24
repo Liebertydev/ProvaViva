@@ -113,10 +113,12 @@ com status `REVISAO_PENDENTE`; demais folhas são gravadas como `CORRIGIDO`. A n
 é proporcional de 0 a 10. Um aluno só pode ter um resultado por avaliação; uma
 segunda correção retorna conflito (409), preservando o resultado existente.
 
-O leitor depende de uma impressão A4 fiel ao modelo de `frontend/src/app/folha/`
-e precisa localizar a borda da folha em um fundo contrastante, inteira e na
-vertical. A leitura de
-bolhas usa limiares iniciais ainda não calibrados com fotos reais; portanto, o
-resultado automático precisa ser validado com amostras antes de uso operacional.
+O modelo atual em `frontend/src/app/features/folhas/pages/modelo-folha/`
+inclui quatro quadrados pretos de referência nos cantos. Imprima a rota `/folha`
+em A4, em tamanho real, e mantenha os quatro quadrados visíveis; o leitor usa
+seus centros para corrigir a perspectiva. Folhas sem esses marcadores ainda
+dependem da detecção do contorno externo. A leitura de bolhas usa limiares
+iniciais ainda não calibrados com fotos reais; portanto, o resultado automático
+precisa ser validado com amostras antes de uso operacional.
 O endpoint responde 422 quando a folha ou a matrícula não podem ser lidas com
 confiança suficiente.
