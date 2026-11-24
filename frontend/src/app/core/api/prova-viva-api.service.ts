@@ -26,6 +26,21 @@ export interface AvaliacaoDisponivel {
   quantidadeQuestoes: number;
 }
 
+export type Turno = 'MANHA' | 'TARDE' | 'NOITE';
+
+export interface NovoAluno {
+  nome: string;
+  matricula: string;
+  turno: Turno;
+}
+
+export interface AlunoCriado {
+  id: number;
+  nome: string;
+  matricula: string;
+  turno: Turno;
+}
+
 export interface RespostaCorrecao {
   resultado: {
     id: string;
@@ -79,6 +94,13 @@ export class ProvaVivaApiService {
     const headers = await this.criarCabecalhoAutenticado();
     return firstValueFrom(
       this.http.get<AvaliacaoDisponivel[]>(`${this.baseUrl}/avaliacoes`, { headers }),
+    );
+  }
+
+  async criarAluno(aluno: NovoAluno): Promise<AlunoCriado> {
+    const headers = await this.criarCabecalhoAutenticado();
+    return firstValueFrom(
+      this.http.post<AlunoCriado>(`${this.baseUrl}/alunos`, aluno, { headers }),
     );
   }
 

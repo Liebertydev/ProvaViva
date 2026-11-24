@@ -1,0 +1,126 @@
+.cadastro-topo {
+  margin-bottom: 20px;
+  animation: pv-rise 0.55s ease both;
+}
+
+.cadastro-topo .pv-display {
+  font-size: clamp(1.8rem, 5vw, 2.35rem);
+}
+
+.cadastro-lead {
+  max-width: 40ch;
+  margin: 10px 0 0;
+  color: color-mix(in srgb, var(--pv-ink) 68%, transparent);
+  line-height: 1.5;
+}
+
+.painel {
+  animation: pv-rise 0.65s ease both;
+  animation-delay: 0.08s;
+}
+
+.painel h2,
+.sucesso h2 {
+  margin: 0 0 6px;
+  font-family: var(--pv-font-display);
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.painel-icone {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ion-color-primary) 14%, transparent);
+  color: var(--ion-color-primary);
+  font-size: 1.6rem;
+}
+
+.painel ion-button[type='submit'] {
+  margin-top: 18px;
+}
+
+.mensagem-validacao,
+.previa-matricula {
+  margin: 6px 4px 4px;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.mensagem-validacao {
+  color: var(--ion-color-danger-shade);
+}
+
+.previa-matricula {
+  color: color-mix(in srgb, var(--pv-ink) 65%, transparent);
+}
+
+.mensagem-erro {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ion-color-danger) 12%, transparent);
+  color: var(--ion-color-danger-shade);
+  animation: pv-fade 0.3s ease both;
+}
+
+.mensagem-erro ion-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 1.15rem;
+}
+
+.aviso-sessao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ion-color-tertiary) 12%, transparent);
+}
+
+.aviso-sessao p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.sucesso {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  border-color: color-mix(in srgb, var(--ion-color-success) 35%, transparent);
+  background: color-mix(in srgb, var(--ion-color-success) 10%, var(--pv-surface));
+  animation: pv-rise 0.45s ease both;
+}
+
+.sucesso > ion-icon {
+  flex-shrink: 0;
+  color: var(--ion-color-success);
+  font-size: 1.9rem;
+}
+
+.sucesso-matricula {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* Foco pelo teclado: o Ionic marca o botão com .ion-focused; o contorno usa a cor do texto,
+   que contrasta com o fundo nos temas claro e escuro. */
+.painel ion-button.ion-focused,
+.aviso-sessao ion-button.ion-focused {
+  outline: 3px solid var(--pv-ink);
+  outline-offset: 3px;
+  border-radius: 12px;
+}

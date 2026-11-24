@@ -1,0 +1,117 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Cadastrar aluno</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <main class="cadastro pv-page-shell">
+    <header class="cadastro-topo">
+      <p class="pv-eyebrow">Registro acadêmico</p>
+      <h1 class="pv-display">Novo aluno</h1>
+      <p class="cadastro-lead">
+        Cadastre o aluno para vincular as notas das próximas correções. Não cria conta nem senha.
+      </p>
+    </header>
+
+    @if (semSessao) {
+      <div class="aviso-sessao" role="status">
+        <p>Entre como professor para cadastrar alunos.</p>
+        <ion-button routerLink="/camera" size="small" fill="outline">
+          <ion-icon slot="start" name="log-in-outline" aria-hidden="true"></ion-icon>
+          Entrar
+        </ion-button>
+      </div>
+    }
+
+    @if (erro) {
+      <p class="mensagem-erro" role="alert">
+        <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+        {{ erro }}
+      </p>
+    }
+
+    @if (alunoCriado) {
+      <section class="pv-panel sucesso" role="status" aria-live="polite">
+        <ion-icon name="checkmark-circle-outline" aria-hidden="true"></ion-icon>
+        <div>
+          <p class="pv-eyebrow">Aluno cadastrado</p>
+          <h2>{{ alunoCriado.nome }}</h2>
+          <p class="sucesso-matricula">Matrícula {{ alunoCriado.matricula | matricula }}</p>
+        </div>
+      </section>
+    }
+
+    <form class="pv-panel painel" novalidate (ngSubmit)="cadastrar()">
+      <div class="painel-icone" aria-hidden="true">
+        <ion-icon name="person-add-outline"></ion-icon>
+      </div>
+      <h2>Dados do aluno</h2>
+
+      <ion-item>
+        <ion-input
+          [(ngModel)]="nome"
+          name="nome"
+          label="Nome completo"
+          labelPlacement="stacked"
+          autocomplete="off"
+          [disabled]="enviando"
+        ></ion-input>
+      </ion-item>
+      @if (tentouEnviar && !nomeValido) {
+        <p class="mensagem-validacao">Informe o nome completo do aluno.</p>
+      }
+
+      <ion-item>
+        <ion-input
+          [(ngModel)]="matricula"
+          name="matricula"
+          label="Matrícula"
+          labelPlacement="stacked"
+          inputmode="numeric"
+          maxlength="8"
+          placeholder="8 dígitos"
+          autocomplete="off"
+          [disabled]="enviando"
+        ></ion-input>
+      </ion-item>
+      @if (tentouEnviar && !matriculaValida) {
+        <p class="mensagem-validacao">A matrícula deve ter exatamente 8 dígitos numéricos.</p>
+      } @else if (matriculaValida) {
+        <p class="previa-matricula">Ficará registrada como {{ matricula.trim() | matricula }}</p>
+      }
+
+      <ion-item>
+        <ion-select
+          [(ngModel)]="turno"
+          name="turno"
+          label="Turno"
+          labelPlacement="stacked"
+          placeholder="Selecione o turno"
+          interface="popover"
+          [disabled]="enviando"
+        >
+          @for (opcao of turnos; track opcao.valor) {
+            <ion-select-option [value]="opcao.valor">{{ opcao.rotulo }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+      @if (tentouEnviar && !turnoValido) {
+        <p class="mensagem-validacao">Selecione o turno do aluno.</p>
+      }
+
+      <ion-button expand="block" type="submit" [disabled]="enviando">
+        @if (enviando) {
+          <ion-spinner name="crescent" aria-hidden="true"></ion-spinner>
+          Cadastrando...
+        } @else {
+          <ion-icon slot="start" name="person-add-outline" aria-hidden="true"></ion-icon>
+          Cadastrar aluno
+        }
+      </ion-button>
+    </form>
+  </main>
+</ion-content>
